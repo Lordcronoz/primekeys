@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.31.0",
-  "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:backend": "pnpm --filter backend dev",
-    "build:web": "pnpm --filter web build"
+ "scripts": {
+  "dev:web": "pnpm --filter web dev",
+  "dev:backend": "pnpm --filter backend dev",
+  "build:web": "pnpm --filter web build",
+  "build": "pnpm --filter web build"
   },
   "devDependencies": {
     "turbo": "2.8.16"
