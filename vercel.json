@@ -1,6 +1,5 @@
 {
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter web build",
-  "outputDirectory": "apps/web/.next",
-  "routes": [{ "src": "/(.*)", "dest": "/$1" }]
+  "outputDirectory": ".next"
 }
