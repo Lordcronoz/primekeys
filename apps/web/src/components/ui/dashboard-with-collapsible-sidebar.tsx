@@ -1,3 +1,6 @@
+'use client'
+
+import { CatalogueSection } from './catalogue-section'
 import React, { useState, useEffect } from 'react'
 import {
   Home, DollarSign, ShoppingCart, BarChart3, Users,
@@ -24,12 +27,12 @@ import { MaintenanceSection } from './maintenance-section'
 const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true'
 
 // ── Section types ────────────────────────────────────────
-type Section = 'overview' | 'clients' | 'orders' | 'tasks' | 'calendar' | 'profit' | 'performance' | 'messaging' | 'maintenance' | 'settings'
+type Section = 'overview' | 'clients' | 'orders' | 'tasks' | 'calendar' | 'profit' | 'performance' | 'messaging' | 'maintenance' | 'settings' | 'catalogue'
 
 // ── Role permissions ─────────────────────────────────────
 const ROLE_PERMISSIONS: Record<string, Section[]> = {
-  'Founder & CEO':                    ['overview', 'clients', 'orders', 'tasks', 'calendar', 'profit', 'performance', 'messaging', 'maintenance', 'settings'],
-  'Co-Founder & Managing Director':   ['overview', 'clients', 'orders', 'tasks', 'calendar', 'performance'],
+  'Founder & CEO':                    ['overview', 'clients', 'orders', 'tasks', 'calendar', 'profit', 'performance', 'messaging', 'maintenance', 'settings', 'catalogue'],
+  'Co-Founder & Managing Director':   ['overview', 'clients', 'orders', 'tasks', 'calendar', 'performance', 'catalogue'],
   'Head Of Client Relations':         ['overview', 'clients', 'tasks', 'calendar'],
   'Head Of Social Media & Marketing': ['overview', 'tasks', 'calendar', 'messaging'],
   'Partner':                          ['overview', 'clients', 'tasks', 'calendar'],
@@ -51,6 +54,7 @@ const NAV_ITEMS: { icon: React.ElementType; label: string; section: Section }[] 
   { icon: BarChart3,     label: 'Performance',  section: 'performance'  },
   { icon: MessageCircle, label: 'Messaging',    section: 'messaging'    },
   { icon: Wrench,        label: 'Maintenance',  section: 'maintenance'  },
+  { icon: Package,       label: 'Catalogue',    section: 'catalogue'    },
   { icon: Settings,      label: 'Settings',     section: 'settings'     },
 ]
 
@@ -280,8 +284,6 @@ function OrdersSection() {
             const isSelected = selected?.id === order.id
             return (
               <div key={order.id} style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${isSelected ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, overflow: 'hidden', transition: 'border-color 0.2s' }}>
-
-                {/* Order row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                     <Package size={15} style={{ color: '#D4AF37' }} />
@@ -298,7 +300,6 @@ function OrdersSection() {
                     </p>
                     <p style={{ fontSize: 10, color: '#444', marginTop: 2 }}>#{order.id.slice(-8).toUpperCase()} · {order.email}</p>
                   </div>
-
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                     {order.phone && (
                       <a href={`https://wa.me/${order.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
@@ -319,15 +320,9 @@ function OrdersSection() {
                   </div>
                 </div>
 
-                {/* Activate panel */}
                 <AnimatePresence>
                   {isSelected && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      style={{ overflow: 'hidden' }}
-                    >
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
                       <div style={{ padding: '16px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                         {error && (
                           <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, fontSize: 12, color: '#f87171', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -337,17 +332,11 @@ function OrdersSection() {
                         <p style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>
                           Credentials will be emailed to <strong style={{ color: '#a1a1a6' }}>{order.email}</strong>
                         </p>
-                        <textarea
-                          value={credentials}
-                          onChange={e => setCredentials(e.target.value)}
-                          placeholder={'Email: example@gmail.com\nPassword: pass123\nPin: 1234'}
-                          rows={4}
+                        <textarea value={credentials} onChange={e => setCredentials(e.target.value)}
+                          placeholder={'Email: example@gmail.com\nPassword: pass123\nPin: 1234'} rows={4}
                           style={{ width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#f5f5f7', fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'none', boxSizing: 'border-box', marginBottom: 10 }}
                         />
-                        <input
-                          type="password"
-                          value={adminSecret}
-                          onChange={e => setAdminSecret(e.target.value)}
+                        <input type="password" value={adminSecret} onChange={e => setAdminSecret(e.target.value)}
                           placeholder="Admin secret key"
                           style={{ width: '100%', height: 36, padding: '0 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#f5f5f7', fontSize: 12, outline: 'none', boxSizing: 'border-box', marginBottom: 12, fontFamily: 'inherit' }}
                         />
@@ -424,7 +413,6 @@ export default function AdminDashboard() {
     }
   }, [role, active])
 
-  // Load clients
   useEffect(() => {
     async function load() {
       if (DEV_BYPASS) { setClients(MOCK_CLIENTS); setLoadingClients(false); return }
@@ -440,7 +428,6 @@ export default function AdminDashboard() {
     else setLoadingClients(false)
   }, [role])
 
-  // Task badge
   useEffect(() => {
     if (!user?.email || DEV_BYPASS) { setTaskBadge(DEV_BYPASS ? 1 : 0); return }
     const q = query(collection(db, 'tasks'),
@@ -449,7 +436,6 @@ export default function AdminDashboard() {
     return onSnapshot(q, snap => setTaskBadge(snap.size))
   }, [user?.email])
 
-  // Order badge — pending activations
   useEffect(() => {
     const q = query(collection(db, 'orders'), where('status', '==', 'utr_submitted'))
     return onSnapshot(q, snap => setOrderBadge(snap.size))
@@ -490,6 +476,7 @@ export default function AdminDashboard() {
         {active === 'performance' && <PerformanceSection taskStats={taskStats} />}
         {active === 'messaging'   && <MessagingSection />}
         {active === 'maintenance' && <MaintenanceSection />}
+        {active === 'catalogue'   && <CatalogueSection />}
         {active === 'settings'    && <SettingsSection role={role} />}
       </main>
     </div>
