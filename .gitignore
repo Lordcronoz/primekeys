@@ -6,3 +6,5 @@ dist
 *.log
 .turbo
 service-account.json
+.vercel
+.env*.local
