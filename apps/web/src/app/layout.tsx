@@ -5,7 +5,7 @@ import { CurrencyProvider } from '@/context/CurrencyContext'
 import { Nav } from '@/components/Nav'
 import { PreloaderWrapper } from '@/components/PreloaderWrapper'
 import Footer from '@/components/Footer'
-import { MaintenanceBanner } from '@/components/ui/MaintenanceBanner'
+import { MaintenanceGate } from '@/components/ui/MaintenanceGate'
 
 export const metadata: Metadata = {
   title: 'PRIMEKEYS — Premium Subscriptions',
@@ -30,14 +30,15 @@ export default function RootLayout({
         <div id="pk-cursor-ring" />
         <AuthProvider>
           <CurrencyProvider>
-            <PreloaderWrapper>
-              <Nav />
-              <MaintenanceBanner />
-              <main className="pt-[48px]">
-                {children}
-              </main>
-              <Footer />
-            </PreloaderWrapper>
+            <MaintenanceGate>
+              <PreloaderWrapper>
+                <Nav />
+                <main className="pt-[48px]">
+                  {children}
+                </main>
+                <Footer />
+              </PreloaderWrapper>
+            </MaintenanceGate>
           </CurrencyProvider>
         </AuthProvider>
       </body>
