@@ -2,6 +2,7 @@
 
 import { calcPrice, formatPrice, PRODUCTS } from '@primekeys/shared'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useCatalogue, type CatalogueProduct } from '@/hooks/useCatalogue'
 import Link from 'next/link'
 
 const svgDataUri = (svgContent: string) =>
@@ -20,49 +21,54 @@ const BRAND_ICONS: Record<string, string> = {
 }
 
 interface ProductCardProps {
-  product: typeof PRODUCTS[0]
+  product: CatalogueProduct
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const { currencyCode } = useCurrency()
-  const { perMonth } = calcPrice(product.baseINR, 1, currencyCode)
+  const { perMonth } = calcPrice(product.effectiveINR, 1, currencyCode)
+  const originalPerMonth = product.effectiveINR !== (product.customPrice ?? product.baseINR)
+    ? calcPrice(product.customPrice ?? product.baseINR, 1, currencyCode).perMonth
+    : null
   const iconSrc = BRAND_ICONS[product.id]
+  const hasDiscount = (product.discount || 0) > 0
+  const isStockOut = product.stockOut || false
 
   return (
-    <Link href={`/store/${product.id}`} className="group block" style={{ textDecoration: 'none' }}>
-      <div
-        style={{
-          background: '#1d1d1f',
-          borderRadius: 20,
-          padding: 24,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          height: '100%',
-          cursor: 'pointer',
-          transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.transform = 'scale(1.02)')}
-        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.transform = 'scale(1)')}
+    <Link href={`/store/${product.id}`} className="group block" style={{ textDecoration: 'none', pointerEvents: isStockOut ? 'none' : 'auto' }}>
+      <div style={{
+        background: '#1d1d1f',
+        borderRadius: 20, padding: 24,
+        display: 'flex', flexDirection: 'column', gap: 12,
+        height: '100%', cursor: isStockOut ? 'not-allowed' : 'pointer',
+        transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
+        opacity: isStockOut ? 0.5 : 1,
+        position: 'relative', overflow: 'hidden',
+      }}
+        onMouseEnter={e => { if (!isStockOut) (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)' }}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1)'}
       >
+        {/* Stock out overlay */}
+        {isStockOut && (
+          <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 8px', borderRadius: 6, background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', fontSize: 9, fontWeight: 800, color: '#f87171', letterSpacing: '0.1em' }}>
+            OUT OF STOCK
+          </div>
+        )}
+
+        {/* Discount badge */}
+        {hasDiscount && !isStockOut && (
+          <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 8px', borderRadius: 6, background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', fontSize: 9, fontWeight: 800, color: '#60a5fa', letterSpacing: '0.1em' }}>
+            {product.discount}% OFF
+          </div>
+        )}
+
         {/* Icon */}
         <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {iconSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={iconSrc} alt={product.name} width={44} height={44} style={{ objectFit: 'contain', display: 'block' }} />
           ) : (
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: product.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 20,
-            }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: product.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 20 }}>
               {product.name[0]}
             </div>
           )}
@@ -70,24 +76,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Name + Description */}
         <div style={{ flex: 1 }}>
-          <h3 style={{
-            fontSize: 17,
-            fontWeight: 600,
-            color: '#f5f5f7',
-            letterSpacing: '-0.02em',
-            marginBottom: 4,
-          }}>
+          <h3 style={{ fontSize: 17, fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', marginBottom: 4 }}>
             {product.name}
           </h3>
-          <p style={{
-            fontSize: 13,
-            color: '#86868b',
-            lineHeight: 1.5,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical' as const,
-            overflow: 'hidden',
-          }}>
+          <p style={{ fontSize: 13, color: '#86868b', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
             {product.description}
           </p>
         </div>
@@ -96,24 +88,24 @@ export function ProductCard({ product }: ProductCardProps) {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div>
             <p style={{ fontSize: 11, fontWeight: 600, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>From</p>
-            <p style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f7', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {formatPrice(perMonth, currencyCode)}<span style={{ fontSize: 13, fontWeight: 400, color: '#6e6e73', marginLeft: 2 }}>/mo</span>
-            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: isStockOut ? '#555' : '#f5f5f7', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {formatPrice(perMonth, currencyCode)}<span style={{ fontSize: 13, fontWeight: 400, color: '#6e6e73', marginLeft: 2 }}>/mo</span>
+              </p>
+              {originalPerMonth && !isStockOut && (
+                <p style={{ fontSize: 13, color: '#555', textDecoration: 'line-through' }}>
+                  {formatPrice(originalPerMonth, currencyCode)}
+                </p>
+              )}
+            </div>
           </div>
-          <div style={{
-            width: 30,
-            height: 30,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.07)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'rgba(255,255,255,0.4)',
-          }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
+          {!isStockOut && (
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          )}
         </div>
       </div>
     </Link>
