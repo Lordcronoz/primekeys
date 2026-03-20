@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRef, useState } from 'react'
 import { motion, useInView, Variants } from 'framer-motion'
 import { Ticker } from '@/components/Ticker'
-import { PRODUCTS } from '@primekeys/shared'
+import { useCatalogue } from '@/hooks/useCatalogue'
 import { ProductCard } from '@/components/ProductCard'
 import { useEffect } from 'react'
 
@@ -423,7 +423,8 @@ function ReviewForm() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const featured = PRODUCTS.slice(0, 4)
+  const allProducts = useCatalogue()
+  const featured = allProducts.slice(0, 4)
 
   return (
     <main style={{ background: '#000', minHeight: '100vh' }}>
