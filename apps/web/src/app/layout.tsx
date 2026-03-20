@@ -5,6 +5,7 @@ import { CurrencyProvider } from '@/context/CurrencyContext'
 import { Nav } from '@/components/Nav'
 import { PreloaderWrapper } from '@/components/PreloaderWrapper'
 import Footer from '@/components/Footer'
+import { MaintenanceBanner } from '@/components/ui/MaintenanceBanner'
 
 export const metadata: Metadata = {
   title: 'PRIMEKEYS — Premium Subscriptions',
@@ -31,6 +32,7 @@ export default function RootLayout({
           <CurrencyProvider>
             <PreloaderWrapper>
               <Nav />
+              <MaintenanceBanner />
               <main className="pt-[48px]">
                 {children}
               </main>
