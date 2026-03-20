@@ -289,7 +289,7 @@ export default function ClientPortal() {
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={motionConfig}
-          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 14 }}>
+          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{ width: isMobile ? 52 : 64, height: isMobile ? 52 : 64, borderRadius: '50%', background: photoURL ? 'transparent' : 'rgba(212,175,55,0.15)', border: '2px solid rgba(212,175,55,0.3)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
