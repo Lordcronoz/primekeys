@@ -88,7 +88,7 @@ export default function ProductPage() {
           <ArrowLeft size={15} /> Back to Store
         </Link>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 32, alignItems: 'start' }}>
+        <div className="pk-product-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 32, alignItems: 'start' }}>
 
           {/* ── Left col ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -156,7 +156,7 @@ export default function ProductPage() {
 
           {/* ── Right col — Order card ── */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-            style={{ position: 'sticky', top: 72, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, overflow: 'hidden' }}>
+            className="pk-sticky-card" style={{ position: 'sticky', top: 72, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, overflow: 'hidden' }}>
 
             {/* Color top bar */}
             <div style={{ height: 3, background: `linear-gradient(to right, ${product.color}, transparent)` }} />

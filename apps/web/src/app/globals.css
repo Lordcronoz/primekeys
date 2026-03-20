@@ -486,3 +486,98 @@ img {
 
 /* ── BOTTOM NAV FOR MOBILE (optional, add later) ─────────────────────────── */
 /* Placeholder for future mobile bottom navigation */
+/* ══════════════════════════════════════════════════
+   UNIVERSAL RESPONSIVE FIXES — DO NOT REMOVE
+   Added: March 2026
+   ══════════════════════════════════════════════════ */
+
+/* ── Prevent any element from causing horizontal scroll ── */
+@media (max-width: 767px) {
+  body { overflow-x: hidden !important; }
+
+  /* Identity card — constrain to screen width */
+  [class*="identity"], [class*="IdentityCard"] > div,
+  .pk-identity-card {
+    max-width: calc(100vw - 32px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Product detail — collapse two col to one col */
+  .pk-product-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  /* Unstick order card on mobile */
+  .pk-sticky-card {
+    position: static !important;
+    top: unset !important;
+  }
+
+  /* Trust badges — 1 col on very small screens */
+  .pk-trust-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Footer — single column */
+  .pk-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+
+  /* About team cards — tap instead of hover */
+  .pk-team-hover-hint {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Reduce hero padding on mobile */
+  .pk-hero-section {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  /* Stats grid — 2 col on mobile */
+  .pk-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* How it works — single column */
+  .pk-how-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Testimonials — single column */
+  .pk-testimonials-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Tablet ── */
+@media (min-width: 768px) {
+  .pk-product-layout {
+    grid-template-columns: minmax(0, 1fr) 340px !important;
+    gap: 32px !important;
+  }
+}
+
+/* ── Disable cursor glow on touch devices ── */
+@media (hover: none) {
+  #pk-cursor-glow { display: none !important; }
+  .pk-grain::after { opacity: 0.015 !important; }
+  .orb-a, .orb-b, .orb-c { animation: none !important; }
+}
+
+/* ── About page — show content on tap instead of hover ── */
+@media (hover: none) {
+  .pk-team-card [data-hover-content] {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+  .pk-team-card [data-hover-hint] {
+    display: none !important;
+  }
+}
