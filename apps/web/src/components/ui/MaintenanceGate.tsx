@@ -9,7 +9,6 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(false)
   const [checked, setChecked] = useState(false)
   const [bypass, setBypass] = useState(false)
-  const [timeLeft, setTimeLeft] = useState('')
   const [dots, setDots] = useState('.')
 
   useEffect(() => {
@@ -19,16 +18,12 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
     }, () => setChecked(true))
   }, [])
 
-  // Animated dots
   useEffect(() => {
     const id = setInterval(() => setDots(d => d.length >= 3 ? '.' : d + '.'), 600)
     return () => clearInterval(id)
   }, [])
 
-  // Don't render until we know the state
   if (!checked) return null
-
-  // If not in maintenance or user bypassed — show normal site
   if (!active || bypass) return <>{children}</>
 
   const waLink = `https://wa.me/918111956481?text=${encodeURIComponent('Hi! I\'d like to be notified when PRIMEKEYS is back online. Please let me know! 🙏')}`
@@ -43,7 +38,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
       {/* Background glow */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
 
-      {/* Animated grid */}
+      {/* Grid */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', opacity: 0.04, backgroundImage: 'linear-gradient(rgba(212,175,55,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 560, width: '100%', textAlign: 'center' }}>
@@ -67,11 +62,11 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
           <span style={{ color: '#D4AF37' }}>back{dots}</span>
         </h1>
 
-        <p style={{ fontSize: 16, color: '#6e6e73', lineHeight: 1.7, marginBottom: 12, maxWidth: 420, margin: '0 auto 12px' }}>
+        <p style={{ fontSize: 16, color: '#6e6e73', lineHeight: 1.7, maxWidth: 420, margin: '0 auto 12px' }}>
           PRIMEKEYS is currently undergoing scheduled maintenance to improve your experience.
         </p>
         <p style={{ fontSize: 14, color: '#444', marginBottom: 48 }}>
-          Sit tight — we'll be back shortly. ✨
+          Sit tight — we'll be back shortly.
         </p>
 
         {/* Status indicator */}
@@ -80,16 +75,15 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
           <span style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24', letterSpacing: '0.08em' }}>MAINTENANCE IN PROGRESS</span>
         </div>
 
-        {/* Action buttons */}
+        {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', marginBottom: 48 }}>
-          {/* Notify me on WhatsApp */}
           <a href={waLink} target="_blank" rel="noreferrer" style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
             height: 54, padding: '0 32px', borderRadius: 16,
-            background: 'linear-gradient(135deg, #25D366, #1da851)',
-            color: '#fff', textDecoration: 'none',
+            background: 'linear-gradient(135deg, #D4AF37, #C49A20)',
+            color: '#000', textDecoration: 'none',
             fontSize: 15, fontWeight: 700,
-            boxShadow: '0 0 24px rgba(37,211,102,0.25)',
+            boxShadow: '0 0 24px rgba(212,175,55,0.2)',
             transition: 'opacity 0.2s, transform 0.15s',
             width: '100%', maxWidth: 340, justifyContent: 'center',
           }}
@@ -99,7 +93,6 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
             Notify me when back
           </a>
 
-          {/* Continue anyway */}
           <button onClick={() => setBypass(true)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             height: 48, padding: '0 28px', borderRadius: 14,
@@ -118,9 +111,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 24 }}>
-          <p style={{ fontSize: 12, color: '#333', marginBottom: 8 }}>
-            Follow us for updates
-          </p>
+          <p style={{ fontSize: 12, color: '#333', marginBottom: 8 }}>Follow us for updates</p>
           <a href="https://instagram.com/primekeys_offical" target="_blank" rel="noreferrer"
             style={{ fontSize: 13, color: '#D4AF37', textDecoration: 'none', fontWeight: 600 }}>
             @primekeys_offical
