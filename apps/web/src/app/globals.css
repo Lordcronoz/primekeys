@@ -337,3 +337,152 @@ textarea {
     color: #f5f5f7;
   }
 }
+/* ── MOBILE PERFORMANCE & OPTIMIZATION ─────────────────────────────────────
+   Add these rules to the END of your globals.css
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Prevent layout shift on mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth scrolling — native on mobile */
+html, body {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Better font rendering on mobile */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+/* Disable heavy animations on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── MOBILE LAYOUT FIXES ──────────────────────────────────────────────────── */
+
+/* Store page — single column on mobile */
+@media (max-width: 640px) {
+  /* Nav */
+  .pk-nav-links { display: none !important; }
+
+  /* Hero text */
+  h1 { letter-spacing: -0.03em !important; }
+
+  /* Product grid — 2 cols on mobile */
+  .pk-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Portal 2-col → 1-col */
+  .pk-portal-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin sidebar — hide on mobile, show hamburger */
+  .pk-admin-sidebar {
+    position: fixed !important;
+    left: -240px !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 200 !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5) !important;
+  }
+  .pk-admin-sidebar.open { left: 0 !important; }
+
+  /* Reduce padding on mobile */
+  .pk-page-padding {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Category pills — scrollable row on mobile */
+  .pk-category-pills {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    justify-content: flex-start !important;
+    padding-bottom: 4px !important;
+  }
+  .pk-category-pills::-webkit-scrollbar { display: none !important; }
+  .pk-category-pills button { flex-shrink: 0 !important; }
+
+  /* Product card — touch target size */
+  .pk-product-card { min-height: 160px !important; }
+
+  /* Ticker — slightly smaller on mobile */
+  .pk-ticker-item { font-size: 12px !important; }
+
+  /* Auth card — full width */
+  .pk-auth-card { border-radius: 20px !important; }
+
+  /* Store hero padding */
+  .pk-store-hero { padding: 48px 20px 48px !important; }
+
+  /* Reduce hero font on small screens */
+  .pk-hero-title { font-size: clamp(36px, 10vw, 64px) !important; }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .pk-portal-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .pk-store-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  }
+}
+
+/* ── TOUCH TARGETS ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Exception for inline/icon buttons */
+  .pk-icon-btn { min-height: unset !important; min-width: unset !important; }
+}
+
+/* ── LAZY LOAD IMAGES ─────────────────────────────────────────────────────── */
+img {
+  content-visibility: auto;
+}
+
+/* ── REDUCE SHADER ANIMATION ON MOBILE ───────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Shader canvas — lower opacity on mobile to save GPU */
+  #pk-shader-canvas { opacity: 0.15 !important; }
+
+  /* Disable grain texture on mobile */
+  .pk-grain::before { display: none !important; }
+
+  /* Reduce blur effects — very GPU heavy on mobile */
+  .pk-frosted { backdrop-filter: blur(10px) !important; }
+}
+
+/* ── CURSOR GLOW — DISABLE ON TOUCH ──────────────────────────────────────── */
+@media (hover: none) {
+  #pk-cursor-glow { display: none !important; }
+}
+
+/* ── BOTTOM NAV FOR MOBILE (optional, add later) ─────────────────────────── */
+/* Placeholder for future mobile bottom navigation */

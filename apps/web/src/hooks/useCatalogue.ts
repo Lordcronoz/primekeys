@@ -10,21 +10,45 @@ export type CatalogueProduct = typeof PRODUCTS[0] & {
   stockOut?: boolean
   customPrice?: number
   effectiveINR: number
+  featured?: boolean
+  flashSaleEnd?: string
+  bulkDiscount?: number
+  bulkMinMonths?: number
+  isCustom?: boolean
 }
 
-// Singleton cache so all components share one Firestore listener
 let cachedProducts: CatalogueProduct[] | null = null
 let listeners: Array<(p: CatalogueProduct[]) => void> = []
 let unsubscribe: (() => void) | null = null
 
-function merge(firestoreData: Record<string, any>): CatalogueProduct[] {
-  return PRODUCTS.map(p => {
-    const override = firestoreData[p.id] || {}
-    const base = override.customPrice ?? p.baseINR
+function merge(data: Record<string, any>): CatalogueProduct[] {
+  // Base products from shared package
+  const base: CatalogueProduct[] = PRODUCTS.map(p => {
+    const override = data[p.id] || {}
+    const basePrice = override.customPrice ?? p.baseINR
     const discount = override.discount ?? 0
-    const effectiveINR = Math.round(base * (1 - discount / 100))
+    const effectiveINR = Math.round(basePrice * (1 - discount / 100))
     return { ...p, ...override, effectiveINR }
   })
+
+  // Custom products added via admin
+  const custom: CatalogueProduct[] = Object.entries(data)
+    .filter(([, v]: any) => v.isCustom)
+    .map(([id, v]: any) => ({
+      id, name: v.name, category: v.category, baseINR: v.basePrice,
+      badge: null, description: v.name, tags: [], features: [], color: '#D4AF37',
+      isCustom: true,
+      discount: v.discount ?? 0,
+      stockOut: v.stockOut ?? false,
+      customPrice: v.customPrice ?? null,
+      featured: v.featured ?? false,
+      flashSaleEnd: v.flashSaleEnd ?? null,
+      bulkDiscount: v.bulkDiscount ?? 0,
+      bulkMinMonths: v.bulkMinMonths ?? 3,
+      effectiveINR: Math.round((v.customPrice ?? v.basePrice) * (1 - (v.discount ?? 0) / 100)),
+    }))
+
+  return [...base, ...custom]
 }
 
 function startListener() {
@@ -35,7 +59,6 @@ function startListener() {
     cachedProducts = merge(data)
     listeners.forEach(fn => fn(cachedProducts!))
   }, () => {
-    // On error, use defaults
     if (!cachedProducts) {
       cachedProducts = merge({})
       listeners.forEach(fn => fn(cachedProducts!))
@@ -45,17 +68,14 @@ function startListener() {
 
 export function useCatalogue() {
   const [products, setProducts] = useState<CatalogueProduct[]>(
-    cachedProducts ?? merge({}) // instant render with defaults
+    cachedProducts ?? merge({})
   )
 
   useEffect(() => {
     listeners.push(setProducts)
     startListener()
-    // If we already have data, update immediately
     if (cachedProducts) setProducts(cachedProducts)
-    return () => {
-      listeners = listeners.filter(fn => fn !== setProducts)
-    }
+    return () => { listeners = listeners.filter(fn => fn !== setProducts) }
   }, [])
 
   return products
