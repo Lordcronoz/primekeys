@@ -271,7 +271,7 @@ export default function ClientPortal() {
                 }
               </div>
               <button onClick={() => setShowEditProfile(true)}
-                style={{ position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderRadius: '50%', background: '#D4AF37', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: '#D4AF37', border: '2px solid #000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Edit3 size={11} color="#000" />
               </button>
             </div>
