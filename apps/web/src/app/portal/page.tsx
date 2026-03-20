@@ -314,7 +314,7 @@ export default function ClientPortal() {
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
             {userData?.role !== 'client' && (
               <Link href="/portal/admin" style={{ height: 36, padding: '0 14px', borderRadius: 9, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,60,60,0.07)', border: '1px solid rgba(255,60,60,0.22)', color: '#f87171', fontSize: 12, fontWeight: 600 }}>
                 Admin Panel
