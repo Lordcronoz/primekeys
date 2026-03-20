@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Package, AlertTriangle, Check, X, Edit3, Save, Percent, Plus, Trash2, Zap, Star } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Package, AlertTriangle, Check, X, Edit3, Save, Percent, Plus, Trash2, Zap, Star, Upload, ImageIcon } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { PRODUCTS } from '@primekeys/shared'
 
 const enc = (s: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`
 
-const BRAND_LOGOS: Record<string, string> = {
+const DEFAULT_LOGOS: Record<string, string> = {
   netflix:  enc(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#E50914" d="M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 24c-.538.086-2.953.408-4.32.6L9.386 13.098v10.821L5.398 24V0z"/></svg>`),
   spotify:  enc(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1DB954" d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`),
   youtube:  enc(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`),
@@ -24,6 +24,7 @@ type Product = {
   id: string; name: string; basePrice: number; category: string; emoji: string
   discount?: number; stockOut?: boolean; customPrice?: number; isCustom?: boolean
   featured?: boolean; flashSaleEnd?: string; bulkDiscount?: number; bulkMinMonths?: number
+  customLogo?: string // base64 uploaded logo
 }
 
 const BASE_PRODUCTS: Product[] = PRODUCTS.map(p => ({
@@ -45,6 +46,62 @@ function FlashCountdown({ endTime }: { endTime: string }) {
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id)
   }, [endTime])
   return <span style={{ fontSize: 10, color: '#f97316', fontWeight: 700 }}>⚡ {t} left</span>
+}
+
+// ── Logo upload button ────────────────────────────────────
+function LogoUpload({ currentLogo, defaultLogo, onUpload, onReset }: {
+  currentLogo?: string; defaultLogo?: string
+  onUpload: (base64: string) => void; onReset: () => void
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const displayLogo = currentLogo || defaultLogo
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 500 * 1024) { setError('Max 500KB'); return }
+    setUploading(true)
+    setError('')
+    const reader = new FileReader()
+    reader.onload = () => { onUpload(reader.result as string); setUploading(false) }
+    reader.onerror = () => { setError('Upload failed'); setUploading(false) }
+    reader.readAsDataURL(file)
+    // Reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
+  return (
+    <div>
+      <label style={lbl}>Logo</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Preview */}
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+          {displayLogo
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={displayLogo} alt="logo" width={26} height={26} style={{ objectFit: 'contain' }} />
+            : <ImageIcon size={16} color="#555" />
+          }
+        </div>
+        {/* Upload btn */}
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 8, background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', color: '#D4AF37', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+          <Upload size={11} />{uploading ? 'Uploading...' : 'Upload'}
+        </button>
+        {/* Reset to default */}
+        {currentLogo && (
+          <button type="button" onClick={onReset}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, padding: '0 10px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', color: '#555', fontSize: 11, cursor: 'pointer' }}>
+            <X size={10} />Reset
+          </button>
+        )}
+        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleFile} style={{ display: 'none' }} />
+      </div>
+      {error && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4 }}>{error}</p>}
+      <p style={{ fontSize: 10, color: '#444', marginTop: 4 }}>PNG, JPG, WebP or SVG · Max 500KB</p>
+    </div>
+  )
 }
 
 export function CatalogueSection() {
@@ -74,9 +131,14 @@ export function CatalogueSection() {
       await setDoc(doc(db,'catalogue','config'), {
         [p.id]: {
           ...(p.isCustom ? { name:p.name, basePrice:p.basePrice, category:p.category, emoji:p.emoji, isCustom:true } : {}),
-          customPrice: p.customPrice ?? null, discount: p.discount ?? 0, stockOut: p.stockOut ?? false,
-          featured: p.featured ?? false, flashSaleEnd: p.flashSaleEnd ?? null,
-          bulkDiscount: p.bulkDiscount ?? 0, bulkMinMonths: p.bulkMinMonths ?? 3,
+          customPrice:   p.customPrice ?? null,
+          discount:      p.discount ?? 0,
+          stockOut:      p.stockOut ?? false,
+          featured:      p.featured ?? false,
+          flashSaleEnd:  p.flashSaleEnd ?? null,
+          bulkDiscount:  p.bulkDiscount ?? 0,
+          bulkMinMonths: p.bulkMinMonths ?? 3,
+          customLogo:    p.customLogo ?? null,
         }
       }, { merge: true })
       setSaved(p.id); setTimeout(() => setSaved(null), 2000)
@@ -97,13 +159,15 @@ export function CatalogueSection() {
     const id = newSvc.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')
     try {
       await setDoc(doc(db,'catalogue','config'), {
-        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3 }
+        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3, customLogo:null }
       }, { merge: true })
       setNewSvc({ name:'', basePrice:'', category:'streaming', emoji:'📦' }); setShowAdd(false)
     } catch(e) { console.error(e) } finally { setAdding(false) }
   }
 
-  const eff = (p: Product) => Math.round((p.customPrice ?? p.basePrice) * (1 - (p.discount||0)/100))
+  const eff = (p: Product) => Math.round((p.customPrice ?? p.basePrice) * (1-(p.discount||0)/100))
+
+  const getLogo = (p: Product) => p.customLogo || DEFAULT_LOGOS[p.id]
 
   return (
     <div>
@@ -123,7 +187,7 @@ export function CatalogueSection() {
         {products.filter(p=>(p.discount||0)>0).length>0 && <Chip icon={<Percent size={11}/>} label={`${products.filter(p=>(p.discount||0)>0).length} Discounted`} color="#60a5fa"/>}
         {products.filter(p=>p.stockOut).length>0 && <Chip icon={<AlertTriangle size={11}/>} label={`${products.filter(p=>p.stockOut).length} Out of Stock`} color="#f87171"/>}
         {products.filter(p=>p.featured).length>0 && <Chip icon={<Star size={11}/>} label={`${products.filter(p=>p.featured).length} Featured`} color="#fbbf24"/>}
-        {products.filter(p=>p.flashSaleEnd&&new Date(p.flashSaleEnd).getTime()>Date.now()).length>0 && <Chip icon={<Zap size={11}/>} label="Flash Sale Active" color="#f97316"/>}
+        {products.filter(p=>p.customLogo).length>0 && <Chip icon={<ImageIcon size={11}/>} label={`${products.filter(p=>p.customLogo).length} Custom Logo`} color="#a78bfa"/>}
       </div>
 
       {/* Add form */}
@@ -142,22 +206,23 @@ export function CatalogueSection() {
         </div>
       )}
 
-      {/* List */}
+      {/* Product list */}
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         {products.map(p => {
           const isEdit=editing===p.id, isSav=saving===p.id, wasSav=saved===p.id
           const effP=eff(p), hasDis=(p.discount||0)>0
           const hasFlash=p.flashSaleEnd&&new Date(p.flashSaleEnd).getTime()>Date.now()
           const hasBulk=(p.bulkDiscount||0)>0
-          const logo=BRAND_LOGOS[p.id]
+          const logo=getLogo(p)
 
           return (
             <div key={p.id} style={{ background:'rgba(255,255,255,0.02)', border:`1px solid ${p.stockOut?'rgba(248,113,113,0.2)':isEdit?'rgba(212,175,55,0.3)':p.featured?'rgba(251,191,36,0.2)':p.isCustom?'rgba(167,139,250,0.15)':'rgba(255,255,255,0.07)'}`, borderRadius:16, overflow:'hidden', transition:'border-color 0.2s' }}>
 
               <div style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px' }}>
-                <div style={{ width:42, height:42, borderRadius:11, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, overflow:'hidden' }}>
+                <div style={{ width:42, height:42, borderRadius:11, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, overflow:'hidden', position:'relative' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {logo ? <img src={logo} alt={p.name} width={28} height={28} style={{objectFit:'contain'}}/> : <span style={{fontSize:18}}>{p.emoji}</span>}
+                  {p.customLogo && <div style={{ position:'absolute', bottom:2, right:2, width:10, height:10, borderRadius:'50%', background:'#a78bfa', border:'1px solid #000' }} title="Custom logo" />}
                 </div>
 
                 <div style={{ flex:1, minWidth:0 }}>
@@ -180,13 +245,11 @@ export function CatalogueSection() {
                 </div>
 
                 <div style={{ display:'flex', gap:6, alignItems:'center', flexShrink:0, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                  {/* Featured star */}
                   <button onClick={async()=>{const u={...p,featured:!p.featured};setProducts(prev=>prev.map(x=>x.id===p.id?u:x));await save(u)}} title={p.featured?'Unfeature':'Feature'}
                     style={{ height:30, width:30, borderRadius:7, border:`1px solid ${p.featured?'rgba(251,191,36,0.4)':'rgba(255,255,255,0.08)'}`, background:p.featured?'rgba(251,191,36,0.1)':'transparent', color:p.featured?'#fbbf24':'#555', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <Star size={13}/>
                   </button>
 
-                  {/* Stock */}
                   <button onClick={async()=>{const u={...p,stockOut:!p.stockOut};setProducts(prev=>prev.map(x=>x.id===p.id?u:x));await save(u)}} disabled={isSav}
                     style={{ height:30, padding:'0 10px', borderRadius:7, border:`1px solid ${p.stockOut?'rgba(248,113,113,0.3)':'rgba(255,255,255,0.1)'}`, background:p.stockOut?'rgba(248,113,113,0.08)':'transparent', color:p.stockOut?'#f87171':'#6e6e73', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                     {p.stockOut?'✓ In Stock':'Stock Out'}
@@ -203,7 +266,7 @@ export function CatalogueSection() {
                       <Check size={11}/>Saved
                     </div>
                   ) : (
-                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3})} }}
+                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3,customLogo:p.customLogo})} }}
                       style={{ display:'flex', alignItems:'center', gap:4, height:30, padding:'0 10px', borderRadius:7, background:isEdit?'rgba(212,175,55,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${isEdit?'rgba(212,175,55,0.3)':'rgba(255,255,255,0.08)'}`, color:isEdit?'#D4AF37':'#a1a1a6', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                       {isEdit?<><X size={11}/>Cancel</>:<><Edit3 size={11}/>Edit</>}
                     </button>
@@ -233,7 +296,7 @@ export function CatalogueSection() {
                       <label style={lbl}>Bulk Discount %</label>
                       <input type="number" min={0} max={50} value={editValues.bulkDiscount??0} onChange={e=>setEditValues(v=>({...v,bulkDiscount:Number(e.target.value)}))} style={fld} placeholder="e.g. 5"/>
                       <label style={{...lbl,marginTop:6}}>Min Months</label>
-                      <input type="number" min={2} max={12} value={editValues.bulkMinMonths??3} onChange={e=>setEditValues(v=>({...v,bulkMinMonths:Number(e.target.value)}))} style={fld} placeholder="3"/>
+                      <input type="number" min={2} max={12} value={editValues.bulkMinMonths??3} onChange={e=>setEditValues(v=>({...v,bulkMinMonths:Number(e.target.value)}))} style={fld}/>
                     </div>
                     <div>
                       <label style={lbl}>Flash Sale (hours)</label>
@@ -246,6 +309,15 @@ export function CatalogueSection() {
                         style={{ width:'100%', height:34, borderRadius:8, border:`1px solid ${editValues.stockOut?'rgba(248,113,113,0.3)':'rgba(74,222,128,0.3)'}`, background:editValues.stockOut?'rgba(248,113,113,0.08)':'rgba(74,222,128,0.06)', color:editValues.stockOut?'#f87171':'#4ade80', fontSize:12, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
                         {editValues.stockOut?<><AlertTriangle size={12}/>Out of Stock</>:<><Check size={12}/>Available</>}
                       </button>
+                    </div>
+                    {/* Logo upload */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <LogoUpload
+                        currentLogo={editValues.customLogo}
+                        defaultLogo={DEFAULT_LOGOS[p.id]}
+                        onUpload={base64 => setEditValues(v => ({ ...v, customLogo: base64 }))}
+                        onReset={() => setEditValues(v => ({ ...v, customLogo: undefined }))}
+                      />
                     </div>
                   </div>
                   <button onClick={()=>{
