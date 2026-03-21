@@ -440,19 +440,19 @@ export default function Home() {
           position: 'absolute', top: '10%', left: '15%',
           width: 600, height: 600, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 70%)',
-          pointerEvents: 'none', filter: 'blur(1px)',
+          pointerEvents: 'none', willChange: 'transform',
         }} />
         <div className="orb-b" style={{
           position: 'absolute', top: '30%', right: '8%',
           width: 480, height: 480, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(120,60,220,0.13) 0%, transparent 70%)',
-          pointerEvents: 'none', filter: 'blur(1px)',
+          pointerEvents: 'none', willChange: 'transform',
         }} />
         <div className="orb-c" style={{
           position: 'absolute', bottom: '5%', left: '40%',
           width: 360, height: 360, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(60,120,255,0.10) 0%, transparent 70%)',
-          pointerEvents: 'none', filter: 'blur(1px)',
+          pointerEvents: 'none', willChange: 'transform',
         }} />
 
         {/* Fade to black at bottom */}

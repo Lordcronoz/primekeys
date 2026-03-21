@@ -176,7 +176,7 @@ export function Nav() {
           display: 'flex', justifyContent: 'center',
         } : { padding: 0 }),
       }}>
-        <div style={{
+        <div className="pk-nav-inner" style={{
           width: '100%',
           height: scrolled && !mobileOpen ? 44 : 52,
           background: scrolled && !mobileOpen

@@ -191,10 +191,14 @@ textarea {
 
 .animate-ticker-left {
   animation: ticker-left 40s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .animate-ticker-right {
   animation: ticker-right 40s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* ─── Page transitions ───────────────────────────────────── */
@@ -253,9 +257,9 @@ textarea {
   50%       { transform: translate(25px,  35px)  scale(1.03); }
 }
 
-.orb-a { animation: orb-drift-a 18s ease-in-out infinite; }
-.orb-b { animation: orb-drift-b 22s ease-in-out infinite; }
-.orb-c { animation: orb-drift-c 14s ease-in-out infinite; }
+.orb-a { animation: orb-drift-a 18s ease-in-out infinite; will-change: transform; }
+.orb-b { animation: orb-drift-b 22s ease-in-out infinite; will-change: transform; }
+.orb-c { animation: orb-drift-c 14s ease-in-out infinite; will-change: transform; }
 
 /* ─── Gold shimmer keyframe ──────────────────────────────── */
 @keyframes gold-shimmer {
@@ -277,6 +281,7 @@ textarea {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gold-shimmer 4s linear infinite;
+  will-change: background-position;
 }
 
 /* ─── Gold gradient divider ──────────────────────────────── */
@@ -569,6 +574,40 @@ img {
   #pk-cursor-glow { display: none !important; }
   .pk-grain::after { opacity: 0.015 !important; }
   .orb-a, .orb-b, .orb-c { animation: none !important; }
+}
+
+/* ── Mobile performance: kill heavy GPU effects on small screens ────────── */
+@media (max-width: 768px) {
+  /* Kill orb animations — they drift behind the hero but cost full GPU layers */
+  .orb-a, .orb-b, .orb-c {
+    animation: none !important;
+    will-change: auto !important;
+  }
+
+  /* Kill grain animation — still rendered as static noise, just not animated */
+  .pk-grain::after {
+    animation: none !important;
+    opacity: 0.012 !important;
+  }
+
+  /* Reduce nav backdrop blur — single biggest compositor cost on mobile */
+  .pk-nav-inner {
+    backdrop-filter: saturate(120%) blur(8px) !important;
+    -webkit-backdrop-filter: saturate(120%) blur(8px) !important;
+  }
+
+  /* Remove box shadows on glass cards — they repaint the entire stacking context */
+  .pk-hover:hover {
+    box-shadow: none !important;
+  }
+
+  /* Shimmer text — simpler on mobile, no background-position animation needed */
+  .pk-shimmer-text {
+    animation: none !important;
+    background: #D4AF37;
+    -webkit-text-fill-color: #D4AF37;
+    will-change: auto !important;
+  }
 }
 
 /* ── About page — show content on tap instead of hover ── */

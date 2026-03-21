@@ -416,6 +416,7 @@ export default function ClientPortal() {
                 }
               </div>
               <button onClick={() => setShowEditProfile(true)}
+                className="pk-icon-btn"
                 style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: '#D4AF37', border: '2px solid #000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Edit3 size={11} color="#000" />
               </button>
