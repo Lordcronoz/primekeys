@@ -138,8 +138,8 @@ function RenewalModal({ sub, onClose }: { sub: any; onClose: () => void }) {
     const dur = durations.find(d => d.months === selectedMonths)
     const msg = encodeURIComponent(
       `Hi! I'd like to renew my *${p?.name || sub.service}* subscription.\n\n` +
-      `📦 Plan: ${dur?.label}\n` +
-      `🔄 Current expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n\n` +
+      `Plan: ${dur?.label}\n` +
+      `Current expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n\n` +
       `Please confirm and send payment details.`
     )
     window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
@@ -242,7 +242,7 @@ function SubCard({ sub, isMobile }: { sub: typeof MOCK_SUBS[0]; isMobile: boolea
   const handleSupport = () => {
     const msg = encodeURIComponent(
       `Hi! I need help with my *${p?.name || sub.service}* subscription.\n\n` +
-      `📅 Expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n` +
+      `Expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n` +
       `Status: ${sub.status}\n\n` +
       `Issue: `
     )

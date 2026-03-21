@@ -46,11 +46,11 @@ const MOCK_MAINTENANCE: MaintenanceWindow[] = [
 ]
 
 function buildTeamMsg(name: string, title: string, date: string, start: string, end: string) {
-  return `Hey ${name.split(' ')[0]}! 👋\n\nPlanned Maintenance Notice from PRIMEKEYS:\n\n*${title}*\n📅 Date: ${date}\n⏰ Time: ${start} – ${end} IST\n\nPlease be aware during this window. Thanks!\n\n— ${SENDER_SHORT}`
+  return `Hey ${name.split(' ')[0]}!\n\nPlanned Maintenance Notice from PRIMEKEYS:\n\n*${title}*\nDate: ${date}\nTime: ${start} – ${end} IST\n\nPlease be aware during this window. Thanks!\n\n— ${SENDER_SHORT}`
 }
 
 function buildClientMsg(title: string, date: string, start: string, end: string) {
-  return `Hi! 👋\n\nWe're scheduling a brief maintenance window:\n\n*${title}*\n📅 ${date} · ⏰ ${start} – ${end} IST\n\nSome services may be briefly unavailable. We apologise for any inconvenience and will be back soon!\n\nThank you for your patience! 🙏\n\n— ${SENDER}`
+  return `Hi!\n\nWe're scheduling a brief maintenance window:\n\n*${title}*\n${date} · ${start} – ${end} IST\n\nSome services may be briefly unavailable. We apologise for any inconvenience and will be back soon!\n\nThank you for your patience!\n\n— ${SENDER}`
 }
 
 const STATUS_STYLE: Record<MaintenanceWindow['status'], { color: string; bg: string }> = {

@@ -26,7 +26,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
   if (!checked) return null
   if (!active || bypass) return <>{children}</>
 
-  const waLink = `https://wa.me/918111956481?text=${encodeURIComponent('Hi! I\'d like to be notified when PRIMEKEYS is back online. Please let me know! 🙏')}`
+  const waLink = `https://wa.me/918111956481?text=${encodeURIComponent('Hi! I\'d like to be notified when PRIMEKEYS is back online. Please let me know!')}`
 
   return (
     <div style={{
