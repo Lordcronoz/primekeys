@@ -140,7 +140,7 @@ function RenewalModal({ sub, onClose }: { sub: any; onClose: () => void }) {
       `Hi! I'd like to renew my *${p?.name || sub.service}* subscription.\n\n` +
       `📦 Plan: ${dur?.label}\n` +
       `🔄 Current expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n\n` +
-      `Please confirm and send payment details. 🙏`
+      `Please confirm and send payment details.`
     )
     window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
     onClose()
