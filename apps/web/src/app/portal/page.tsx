@@ -123,74 +123,220 @@ function EditProfileModal({ user, onClose, onSaved }: { user: any; onClose: () =
   )
 }
 
+// ── Renewal Modal ─────────────────────────────────────────
+function RenewalModal({ sub, onClose }: { sub: any; onClose: () => void }) {
+  const [selectedMonths, setSelectedMonths] = useState(1)
+  const p = PRODUCTS.find(pr => pr.id === sub.service)
+  const durations = [
+    { months: 1,  label: '1 Month'  },
+    { months: 3,  label: '3 Months', save: 'Save 10%' },
+    { months: 6,  label: '6 Months', save: 'Save 13%' },
+    { months: 12, label: '1 Year',   save: 'Save 21%' },
+  ]
+
+  const handleRenew = () => {
+    const dur = durations.find(d => d.months === selectedMonths)
+    const msg = encodeURIComponent(
+      `Hi! I'd like to renew my *${p?.name || sub.service}* subscription.\n\n` +
+      `📦 Plan: ${dur?.label}\n` +
+      `🔄 Current expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n\n` +
+      `Please confirm and send payment details. 🙏`
+    )
+    window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
+    onClose()
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }} onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+        style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 380, background: '#0c0c0c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f5f5f7' }}>Renew {p?.name || sub.service}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer' }}><X size={18} /></button>
+        </div>
+        <p style={{ fontSize: 12, color: '#555', marginBottom: 16 }}>
+          Current expiry: <span style={{ color: '#a1a1a6' }}>{new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+          {durations.map(dur => {
+            const sel = selectedMonths === dur.months
+            return (
+              <button key={dur.months} onClick={() => setSelectedMonths(dur.months)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${sel ? (p?.color || '#D4AF37') + '66' : 'rgba(255,255,255,0.07)'}`, background: sel ? `${p?.color || '#D4AF37'}12` : 'transparent', cursor: 'pointer', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${sel ? (p?.color || '#D4AF37') : '#444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {sel && <div style={{ width: 8, height: 8, borderRadius: '50%', background: p?.color || '#D4AF37' }} />}
+                  </div>
+                  <span style={{ fontSize: 13, color: sel ? '#f5f5f7' : '#6e6e73', fontWeight: sel ? 700 : 400 }}>{dur.label}</span>
+                  {dur.save && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(74,222,128,0.1)', color: '#4ade80', fontWeight: 700 }}>{dur.save}</span>}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+        <button onClick={handleRenew}
+          style={{ width: '100%', height: 48, borderRadius: 12, background: `linear-gradient(135deg, ${p?.color || '#D4AF37'}, ${p?.color || '#C49A20'})`, border: 'none', color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Renew via WhatsApp
+        </button>
+      </motion.div>
+    </div>
+  )
+}
+
+// ── Referral Button ───────────────────────────────────────
+function ReferralButton({ refCode }: { refCode: string }) {
+  const [copied, setCopied] = useState(false)
+  const link = `https://primekeys.vercel.app?ref=${refCode}`
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'PRIMEKEYS — Premium Subscriptions',
+          text: `Get Netflix, Spotify, ChatGPT Plus & more at 80% off! Use my code ${refCode} for 10% off your first renewal.`,
+          url: link,
+        })
+      } catch {}
+    } else {
+      navigator.clipboard.writeText(link).catch(() => {})
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    }
+  }
+
+  return (
+    <button onClick={handleShare}
+      style={{ width: '100%', height: 40, borderRadius: 10, background: copied ? 'rgba(74,222,128,0.1)' : 'transparent', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(212,175,55,0.3)'}`, color: copied ? '#4ade80' : '#D4AF37', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, transition: 'all 0.2s' }}>
+      {copied ? (
+        <><Check size={14} /> Link Copied!</>
+      ) : (
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Share Invite Link
+        </>
+      )}
+    </button>
+  )
+}
+
 // ── Sub card ──────────────────────────────────────────────
 function SubCard({ sub, isMobile }: { sub: typeof MOCK_SUBS[0]; isMobile: boolean }) {
   const [showCreds, setShowCreds] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [showRenew, setShowRenew] = useState(false)
   const p = PRODUCTS.find(pr => pr.id === sub.service)
   const isExpired = sub.status === 'expired'
-  const copy = (val: string, field: string) => { navigator.clipboard.writeText(val).catch(() => {}); setCopied(field); setTimeout(() => setCopied(null), 2000) }
-  const daysLeft = () => Math.max(0, Math.ceil((new Date(sub.expiryDate).getTime() - Date.now()) / 86400000))
+  const daysLeft = Math.max(0, Math.ceil((new Date(sub.expiryDate).getTime() - Date.now()) / 86400000))
+  const isExpiringSoon = !isExpired && daysLeft <= 7
+
+  const copy = (val: string, field: string) => {
+    navigator.clipboard.writeText(val).catch(() => {})
+    setCopied(field)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const handleSupport = () => {
+    const msg = encodeURIComponent(
+      `Hi! I need help with my *${p?.name || sub.service}* subscription.\n\n` +
+      `📅 Expiry: ${new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}\n` +
+      `Status: ${sub.status}\n\n` +
+      `Issue: `
+    )
+    window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
+  }
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      style={{ background: isExpired ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)', border: isExpired ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 18, overflow: 'hidden', opacity: isExpired ? 0.6 : 1 }}>
-      {!isExpired && <div style={{ height: 2, background: `linear-gradient(to right, ${p?.color || '#D4AF37'}, transparent)` }} />}
-      <div style={{ padding: isMobile ? '14px 16px' : '18px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: `linear-gradient(135deg, ${p?.color || '#333'}cc, ${p?.color || '#333'}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>
-              {p?.name.charAt(0) || sub.service[0].toUpperCase()}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontWeight: 700, fontSize: 14, color: '#f5f5f7', marginBottom: 4 }}>{p?.name || sub.service}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 980, background: isExpired ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)', border: `1px solid ${isExpired ? 'rgba(248,113,113,0.2)' : 'rgba(74,222,128,0.2)'}`, fontSize: 9, fontWeight: 700, color: isExpired ? '#f87171' : '#4ade80', letterSpacing: '0.06em' }}>
-                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: isExpired ? '#f87171' : '#4ade80' }} />
-                  {isExpired ? 'EXPIRED' : 'ACTIVE'}
-                </span>
-                <span style={{ fontSize: 10, color: '#555' }}>
-                  {isExpired ? 'Expired' : `${daysLeft()}D left`} · {new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
-            <button style={{ height: 32, padding: '0 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#a1a1a6', fontSize: 11, cursor: 'pointer' }}>Support</button>
-            <button style={{ height: 32, padding: '0 12px', borderRadius: 8, background: `linear-gradient(135deg, ${p?.color || '#D4AF37'}, ${p?.color || '#C49A20'}aa)`, border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              {isExpired ? 'Reactivate' : 'Renew'}
+    <>
+      <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        style={{ background: isExpired ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.03)', border: isExpired ? '1px solid rgba(255,255,255,0.05)' : `1px solid ${isExpiringSoon ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 18, overflow: 'hidden', opacity: isExpired ? 0.6 : 1 }}>
+        {!isExpired && <div style={{ height: 2, background: `linear-gradient(to right, ${p?.color || '#D4AF37'}, transparent)` }} />}
+
+        {/* Expiring soon banner */}
+        {isExpiringSoon && (
+          <div style={{ padding: '7px 16px', background: 'rgba(251,191,36,0.08)', borderBottom: '1px solid rgba(251,191,36,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 600 }}>⚠ Expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</span>
+            <button onClick={() => setShowRenew(true)}
+              style={{ fontSize: 10, color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontWeight: 700 }}>
+              Renew Now
             </button>
-          </div>
-        </div>
-        {sub.credentials && !isExpired && (
-          <div style={{ marginTop: 12 }}>
-            <button onClick={() => setShowCreds(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showCreds ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }}><path d="M6 9l6 6 6-6"/></svg>
-              {showCreds ? 'Hide' : 'Show'} credentials
-            </button>
-            <AnimatePresence>
-              {showCreds && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
-                  <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                    {(['email', 'password'] as const).map(f => (
-                      <div key={f}>
-                        <p style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>{f}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <span style={{ fontSize: 12, color: '#a1a1a6', fontFamily: 'monospace', wordBreak: 'break-all' }}>{sub.credentials![f]}</span>
-                          <button onClick={() => copy(sub.credentials![f], f)} style={{ padding: '2px 7px', borderRadius: 5, background: copied === f ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied === f ? 'rgba(74,222,128,0.28)' : 'rgba(255,255,255,0.08)'}`, color: copied === f ? '#4ade80' : '#555', fontSize: 10, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-                            {copied === f ? '✓ Copied' : 'Copy'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         )}
-      </div>
-    </motion.div>
+
+        <div style={{ padding: isMobile ? '14px 16px' : '18px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: `linear-gradient(135deg, ${p?.color || '#333'}cc, ${p?.color || '#333'}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 18, flexShrink: 0 }}>
+                {p?.name.charAt(0) || sub.service[0].toUpperCase()}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontWeight: 700, fontSize: 14, color: '#f5f5f7', marginBottom: 4 }}>{p?.name || sub.service}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 980, background: isExpired ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)', border: `1px solid ${isExpired ? 'rgba(248,113,113,0.2)' : 'rgba(74,222,128,0.2)'}`, fontSize: 9, fontWeight: 700, color: isExpired ? '#f87171' : '#4ade80', letterSpacing: '0.06em' }}>
+                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: isExpired ? '#f87171' : '#4ade80' }} />
+                    {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#555' }}>
+                    {isExpired ? 'Expired' : `${daysLeft}d left`} · {new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+              <button onClick={handleSupport}
+                style={{ height: 32, padding: '0 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#a1a1a6', fontSize: 11, cursor: 'pointer' }}>
+                Support
+              </button>
+              <button onClick={() => setShowRenew(true)}
+                style={{ height: 32, padding: '0 12px', borderRadius: 8, background: `linear-gradient(135deg, ${p?.color || '#D4AF37'}, ${p?.color || '#C49A20'}aa)`, border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                {isExpired ? 'Reactivate' : 'Renew'}
+              </button>
+            </div>
+          </div>
+
+          {/* Credentials */}
+          {sub.credentials && !isExpired && (
+            <div style={{ marginTop: 12 }}>
+              <button onClick={() => setShowCreds(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', padding: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  style={{ transform: showCreds ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }}>
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                {showCreds ? 'Hide' : 'Show'} credentials
+              </button>
+              <AnimatePresence>
+                {showCreds && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} style={{ overflow: 'hidden' }}>
+                    <div style={{ marginTop: 10, padding: '12px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      {(['email', 'password'] as const).map(f => (
+                        <div key={f} style={{ marginBottom: f === 'email' ? 10 : 0 }}>
+                          <p style={{ fontSize: 9, color: '#444', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{f}</p>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ fontSize: 12, color: '#a1a1a6', fontFamily: 'monospace', wordBreak: 'break-all', flex: 1 }}>{sub.credentials![f]}</span>
+                            <button onClick={() => copy(sub.credentials![f], f)}
+                              style={{ flexShrink: 0, height: 28, padding: '0 10px', borderRadius: 7, background: copied === f ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied === f ? 'rgba(74,222,128,0.28)' : 'rgba(255,255,255,0.08)'}`, color: copied === f ? '#4ade80' : '#D4AF37', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s' }}>
+                              {copied === f ? '✓ Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {showRenew && <RenewalModal sub={sub} onClose={() => setShowRenew(false)} />}
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -249,6 +395,7 @@ export default function ClientPortal() {
   const activeSubs  = subs.filter(s => s.status === 'active')
   const expiredSubs = subs.filter(s => s.status !== 'active')
   const mc = isMobile ? { duration: 0.25 } : { duration: 0.5 }
+  const refCode = userData?.refCode || cardName.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '') + '10'
 
   return (
     <div style={{ background: '#000', minHeight: '100vh' }}>
@@ -259,8 +406,6 @@ export default function ClientPortal() {
         {/* ── Header ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={mc}
           style={{ marginBottom: isMobile ? 20 : 36 }}>
-
-          {/* Top row — avatar + name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{ width: isMobile ? 52 : 64, height: isMobile ? 52 : 64, borderRadius: '50%', background: photoURL ? 'transparent' : 'rgba(212,175,55,0.15)', border: '2px solid rgba(212,175,55,0.3)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -286,8 +431,7 @@ export default function ClientPortal() {
             </div>
           </div>
 
-          {/* Action buttons — full width stacked on mobile, row on desktop */}
-          <div style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'row' : 'row', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
             {userData?.role !== 'client' && (
               <Link href="/portal/admin" style={{ height: 40, padding: '0 16px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,60,60,0.07)', border: '1px solid rgba(255,60,60,0.22)', color: '#f87171', fontSize: 13, fontWeight: 600, flex: isMobile ? 1 : 'none' }}>
                 Admin Panel
@@ -381,14 +525,13 @@ export default function ClientPortal() {
               <div style={{ padding: 20, borderRadius: 18, background: 'linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02))', border: '1px solid rgba(212,175,55,0.16)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: '#D4AF37', opacity: 0.05, filter: 'blur(20px)', pointerEvents: 'none' }} />
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#D4AF37', marginBottom: 5 }}>✦ Refer & Earn</p>
-                <p style={{ fontSize: 12, color: '#666', lineHeight: 1.65, marginBottom: 14 }}>
-                  Invite friends — get <strong style={{ color: '#a1a1a6' }}>10% off</strong> each renewal. Your code: <code style={{ color: '#D4AF37', fontFamily: 'monospace' }}>{userData?.refCode || 'PRIMEKEYS'}</code>
+                <p style={{ fontSize: 12, color: '#666', lineHeight: 1.65, marginBottom: 6 }}>
+                  Invite friends — get <strong style={{ color: '#a1a1a6' }}>10% off</strong> each renewal.
                 </p>
-                <button style={{ width: '100%', height: 36, borderRadius: 9, background: 'transparent', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,175,55,0.08)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  Get Invite Link
-                </button>
+                <p style={{ fontSize: 11, color: '#555', marginBottom: 14 }}>
+                  Your code: <code style={{ color: '#D4AF37', fontFamily: 'monospace', fontWeight: 700 }}>{refCode}</code>
+                </p>
+                <ReferralButton refCode={refCode} />
               </div>
               <a href="https://wa.me/918111956481" target="_blank" rel="noreferrer"
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px', borderRadius: 13, textDecoration: 'none', background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.16)' }}>
@@ -407,12 +550,13 @@ export default function ClientPortal() {
               style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ padding: 18, borderRadius: 16, background: 'linear-gradient(135deg, rgba(212,175,55,0.07), rgba(212,175,55,0.02))', border: '1px solid rgba(212,175,55,0.16)' }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#D4AF37', marginBottom: 5 }}>✦ Refer & Earn</p>
-                <p style={{ fontSize: 12, color: '#666', lineHeight: 1.65, marginBottom: 12 }}>
-                  Invite friends — get <strong style={{ color: '#a1a1a6' }}>10% off</strong> each renewal. Your code: <code style={{ color: '#D4AF37', fontFamily: 'monospace' }}>{userData?.refCode || 'PRIMEKEYS'}</code>
+                <p style={{ fontSize: 12, color: '#666', lineHeight: 1.65, marginBottom: 6 }}>
+                  Invite friends — get <strong style={{ color: '#a1a1a6' }}>10% off</strong> each renewal.
                 </p>
-                <button style={{ width: '100%', height: 40, borderRadius: 10, background: 'transparent', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  Get Invite Link
-                </button>
+                <p style={{ fontSize: 11, color: '#555', marginBottom: 12 }}>
+                  Your code: <code style={{ color: '#D4AF37', fontFamily: 'monospace', fontWeight: 700 }}>{refCode}</code>
+                </p>
+                <ReferralButton refCode={refCode} />
               </div>
               <a href="https://wa.me/918111956481" target="_blank" rel="noreferrer"
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 13, textDecoration: 'none', background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.16)' }}>
