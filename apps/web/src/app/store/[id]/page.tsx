@@ -68,7 +68,7 @@ export default function ProductPage() {
   const handleOrder = () => {
     setOrdering(true)
     const msg = encodeURIComponent(
-      `Hi! I'd like to order *${product.name}* — ${selectedMonths} month${selectedMonths > 1 ? 's' : ''} for ${formatPrice(total, currencyCode)}.\n\nPlease confirm and send payment details. 🙏`
+      `Hi! I'd like to order *${product.name}* — ${selectedMonths} month${selectedMonths > 1 ? 's' : ''} for ${formatPrice(total, currencyCode)}.\n\nPlease confirm and send payment details.`
     )
     window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
     setTimeout(() => setOrdering(false), 2000)
