@@ -601,11 +601,14 @@ img {
     box-shadow: none !important;
   }
 
-  /* Shimmer text — simpler on mobile, no background-position animation needed */
+  /* Shimmer text — on mobile use plain gold text, no clip/animation */
   .pk-shimmer-text {
     animation: none !important;
-    background: #D4AF37;
-    -webkit-text-fill-color: #D4AF37;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: #D4AF37 !important;
+    color: #D4AF37 !important;
     will-change: auto !important;
   }
 }
