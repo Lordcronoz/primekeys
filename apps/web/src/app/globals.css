@@ -356,7 +356,14 @@ html {
 html, body {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
+  /* overscroll-behavior-y: none removed — it blocks native iOS momentum scroll */
+}
+
+/* Only lock overscroll on desktop (mouse devices) */
+@media (hover: hover) {
+  body {
+    overscroll-behavior-y: none;
+  }
 }
 
 /* Remove tap highlight on mobile */

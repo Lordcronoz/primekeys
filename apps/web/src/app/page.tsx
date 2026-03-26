@@ -466,6 +466,7 @@ export default function Home() {
         <div style={{
           position: 'relative', zIndex: 3,
           height: '100vh',
+          minHeight: '-webkit-fill-available',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           textAlign: 'center', padding: '80px 24px 40px', boxSizing: 'border-box',
