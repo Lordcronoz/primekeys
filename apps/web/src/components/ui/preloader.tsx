@@ -125,10 +125,10 @@ export default function Preloader({ onComplete }: { onComplete?: () => void }) {
             <AnimatePresence mode="wait">
               <motion.span
                 key={`word-${index}`}
-                initial={{ opacity: 0, y: 16, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, y: -12, filter: 'blur(8px)' }}
-                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 style={{
                   fontSize: 'clamp(38px, 7vw, 82px)',
                   fontWeight: isFinal ? 800 : 700,
