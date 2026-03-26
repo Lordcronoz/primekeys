@@ -623,3 +623,278 @@ img {
     display: none !important;
   }
 }
+/* ============================================================
+   PRIMEKEYS — UNIVERSAL MOBILE FIX
+   Paste this at the very END of globals.css
+   Fixes all pages universally below 768px
+   Desktop is 100% untouched
+   ============================================================ */
+
+/* ── Base mobile resets ────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Prevent horizontal scroll on ANY page */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  /* Consistent page padding on mobile */
+  main {
+    padding-top: 48px !important;
+  }
+
+  /* ── Typography scaling ── */
+  h1 { font-size: clamp(28px, 8vw, 48px) !important; letter-spacing: -0.03em !important; }
+  h2 { font-size: clamp(20px, 5vw, 32px) !important; }
+
+  /* ── Touch targets — everything tappable must be at least 44px ── */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+  /* Exception for small inline buttons */
+  button[style*="height: 28"],
+  button[style*="height: 30"],
+  button[style*="height: 32"] {
+    min-height: unset !important;
+  }
+
+  /* ── Remove tap highlight flash ── */
+  * { -webkit-tap-highlight-color: transparent !important; }
+
+  /* ── Scrollable rows (category pills etc) ── */
+  .pk-scroll-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+    gap: 8px !important;
+  }
+  .pk-scroll-row::-webkit-scrollbar { display: none !important; }
+  .pk-scroll-row > * { flex-shrink: 0 !important; }
+}
+
+/* ── Store page ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Category filter pills — horizontal scroll instead of wrap */
+  .pk-category-pills {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    justify-content: flex-start !important;
+    padding-bottom: 6px !important;
+  }
+  .pk-category-pills::-webkit-scrollbar { display: none !important; }
+  .pk-category-pills > * { flex-shrink: 0 !important; }
+
+  /* Product grid — 2 cols on mobile */
+  .pk-store-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+/* ── Product detail page (/store/[id]) ─────────────────────── */
+@media (max-width: 768px) {
+
+  /* Stack 2-col layout to single column */
+  .pk-product-layout {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  /* Order card — unstick on mobile, just flows in the page */
+  .pk-sticky-card {
+    position: static !important;
+  }
+
+  /* Product icon smaller on mobile */
+  .pk-product-layout .pk-product-icon {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  /* Trust badges — 3 col stays but smaller text */
+  .pk-trust-badges p { font-size: 10px !important; }
+}
+
+/* ── Portal / My Account page ──────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Portal page padding */
+  .pk-portal-page {
+    padding: 64px 16px 48px !important;
+  }
+
+  /* Portal 2-col grid → single column */
+  .pk-portal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* Subscription card padding */
+  .pk-sub-card-inner {
+    padding: 14px 16px !important;
+  }
+}
+
+/* ── Admin dashboard ───────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Sidebar hidden off-screen on mobile */
+  .pk-admin-sidebar {
+    position: fixed !important;
+    left: -260px !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 300 !important;
+    transition: left 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.6) !important;
+  }
+  .pk-admin-sidebar.open {
+    left: 0 !important;
+  }
+
+  /* Admin content — full width when sidebar hidden */
+  .pk-admin-content {
+    margin-left: 0 !important;
+    padding: 16px !important;
+    width: 100% !important;
+  }
+
+  /* Admin tables — horizontal scroll */
+  .pk-admin-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Catalogue edit panel — single column */
+  .pk-catalogue-edit-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Stats grid in overview — 2 cols */
+  .pk-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+/* ── Landing page ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Hero padding */
+  .pk-hero {
+    padding: 60px 20px 48px !important;
+  }
+
+  /* Featured products grid — 2 cols */
+  .pk-featured-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Hero CTA buttons — stack vertically */
+  .pk-hero-ctas {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+  .pk-hero-ctas a,
+  .pk-hero-ctas button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Ticker — slightly smaller */
+  .pk-ticker-item { font-size: 12px !important; }
+
+  /* How it works steps — single column */
+  .pk-steps-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Auth page ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pk-auth-card {
+    padding: 28px 20px !important;
+    border-radius: 20px !important;
+    margin: 0 8px !important;
+  }
+}
+
+/* ── Maintenance gate ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pk-maintenance-gate {
+    padding: 24px 20px !important;
+  }
+  .pk-maintenance-buttons {
+    width: 100% !important;
+  }
+  .pk-maintenance-buttons a,
+  .pk-maintenance-buttons button {
+    max-width: 100% !important;
+  }
+}
+
+/* ── Global animation performance on mobile ────────────────── */
+@media (max-width: 768px) {
+
+  /* Cursor glow — pointless on touch */
+  #pk-cursor, #pk-cursor-ring, #pk-cursor-glow {
+    display: none !important;
+  }
+
+  /* Reduce backdrop blur on all frosted glass elements */
+  [style*="backdrop-filter"] {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  /* Disable will-change on everything — prevents unnecessary GPU layers */
+  * {
+    will-change: auto !important;
+  }
+
+  /* Orb backgrounds — static, no animation */
+  .orb-a, .orb-b, .orb-c {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* All framer-motion transitions — cap at 0.3s */
+  [data-framer-component-type],
+  [data-projection-id] {
+    transition-duration: 0.3s !important;
+  }
+
+  /* Remove box shadows on everything — most expensive composite operation */
+  .pk-card, .pk-glass {
+    box-shadow: none !important;
+  }
+}
+
+/* ── Small phones (375px and below) ───────────────────────── */
+@media (max-width: 390px) {
+
+  /* Even tighter padding */
+  body { font-size: 14px; }
+
+  /* Nav logo smaller */
+  .pk-nav-logo { font-size: 16px !important; }
+
+  /* Store grid — single column on very small screens */
+  .pk-store-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Featured grid — single column */
+  .pk-featured-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
