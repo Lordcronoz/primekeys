@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DURATIONS, CURRENCIES } from '@primekeys/shared'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { useCurrency } from '@/context/CurrencyContext'
-import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import Link from 'next/link'
 import { ArrowLeft, Check, MessageCircle, Shield, Zap, Clock } from 'lucide-react'
 
@@ -43,96 +42,6 @@ function calcPrice(baseINR: number, months: number, currencyCode: string) {
   return { total, perMonth, symbol: curr.symbol, saveLabel: dur.saveLabel }
 }
 
-// ── PayPal SDK error fallback ─────────────────────────────
-function PayPalSdkFallback() {
-  return (
-    <div style={{
-      padding: '18px 16px',
-      borderRadius: 12,
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      textAlign: 'center',
-    }}>
-      <p style={{ fontSize: 13, color: '#a1a1a6', marginBottom: 12, lineHeight: 1.6 }}>
-        PayPal is temporarily unavailable.
-        <br />Please contact us to complete your order.
-      </p>
-      <a
-        href="https://wa.me/918111956481"
-        target="_blank"
-        rel="noreferrer"
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '10px 20px', borderRadius: 10,
-          background: 'rgba(37,211,102,0.1)',
-          border: '1px solid rgba(37,211,102,0.25)',
-          color: '#25D366', fontSize: 13, fontWeight: 600,
-          textDecoration: 'none',
-        }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.532 5.864L.057 23.57a.5.5 0 0 0 .614.612l5.807-1.461A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.93 0-3.738-.52-5.287-1.424l-.369-.22-3.849.968.999-3.75-.241-.385A9.943 9.943 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-        Chat on WhatsApp
-      </a>
-    </div>
-  )
-}
-
-// ── PayPal buttons with built-in SDK error detection ─────────────────────────
-function PayPalButtons_(
-  props: {
-    total: number
-    paypalCurrency: string
-    productName: string
-    months: number
-    onSuccess: (orderID: string) => void
-    onError: () => void
-  }
-) {
-  const [{ isResolved, isRejected }] = usePayPalScriptReducer()
-  const { total, paypalCurrency, productName, months, onSuccess, onError } = props
-
-  // SDK script failed to load (e.g. invalid/missing client ID)
-  if (isRejected) return <PayPalSdkFallback />
-
-  // Still loading the SDK script
-  if (!isResolved) return (
-    <div style={{ height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-    </div>
-  )
-
-  return (
-    <PayPalButtons
-      style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 44 }}
-      createOrder={(_data, actions) => {
-        return actions.order.create({
-          intent: 'CAPTURE',
-          purchase_units: [{
-            amount: {
-              currency_code: paypalCurrency,
-              value: total.toFixed(2),
-            },
-            description: `PRIMEKEYS — ${productName} (${months} month${months > 1 ? 's' : ''})`,
-          }],
-        })
-      }}
-      onApprove={async (data, actions) => {
-        try {
-          const order = await actions.order!.capture()
-          onSuccess(order.id ?? data.orderID)
-        } catch (err) {
-          console.error('[PayPal] capture failed:', err)
-          onError()
-        }
-      }}
-      onError={(err) => {
-        console.error('[PayPal] button error:', err)
-        onError()
-      }}
-    />
-  )
-}
-
 // ── Main page ─────────────────────────────────────────────
 export default function ProductPage() {
   const params = useParams()
@@ -140,12 +49,6 @@ export default function ProductPage() {
   const allProducts = useCatalogue()
   const [selectedMonths, setSelectedMonths] = useState(1)
   const [ordering, setOrdering] = useState(false)
-  const [paypalSuccess, setPaypalSuccess] = useState<string | null>(null)
-  const [paypalError, setPaypalError] = useState(false)
-  const [showPayPal, setShowPayPal] = useState(false)
-
-  // PayPal currency resolved once at page-level so the provider never remounts
-  const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'EUR'
 
   const id = typeof params.id === 'string' ? params.id : params.id?.[0]
   const product = allProducts.find(p => p.id === id)
@@ -164,8 +67,6 @@ export default function ProductPage() {
   const originalTotal = product.discount ? calcPrice(product.customPrice ?? product.baseINR, selectedMonths, currencyCode).total : null
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
   const isUPI = currencyCode === 'INR'
-  const needsPayPal = !isUPI && !product.stockOut
-
   const handleUPIOrder = () => {
     setOrdering(true)
     const msg = encodeURIComponent(
@@ -175,14 +76,17 @@ export default function ProductPage() {
     setTimeout(() => setOrdering(false), 2000)
   }
 
-  const handlePayPalSuccess = (orderID: string) => {
-    setPaypalSuccess(orderID)
-    setShowPayPal(false)
-    // Notify via WhatsApp
-    const msg = encodeURIComponent(
-      `Hi! I just completed a PayPal payment for *${product.name}* — ${selectedMonths} month${selectedMonths > 1 ? 's' : ''}.\n\n💳 PayPal Order ID: ${orderID}\n💰 Amount: ${formatPrice(total, currencyCode)}\n\nPlease confirm and send my credentials.`
-    )
-    window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
+  const handlePayPalCheckout = () => {
+    const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'EUR'
+    const params = new URLSearchParams({
+      product: product.id,
+      name:     product.name,
+      months:   String(selectedMonths),
+      total:    String(calcPrice(product.effectiveINR, selectedMonths, paypalCurrency).total),
+      currency: paypalCurrency,
+      icon:     encodeURIComponent(BRAND_ICONS[product.id] || ''),
+    })
+    window.open(`/checkout/paypal?${params.toString()}`, '_blank', 'width=520,height=700,scrollbars=yes')
   }
 
   const orderCard = (
@@ -214,7 +118,7 @@ export default function ProductPage() {
             const { total: t, perMonth: pm } = calcPrice(product.effectiveINR, dur.months, currencyCode)
             const sel = selectedMonths === dur.months
             return (
-              <button key={dur.months} onClick={() => { setSelectedMonths(dur.months); setShowPayPal(false) }}
+              <button key={dur.months} onClick={() => setSelectedMonths(dur.months)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${sel ? product.color + '66' : 'rgba(255,255,255,0.07)'}`, background: sel ? `${product.color}12` : 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${sel ? product.color : '#444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -246,28 +150,6 @@ export default function ProductPage() {
           </p>
         </div>
 
-        {/* Success state */}
-        <AnimatePresence>
-          {paypalSuccess && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', marginBottom: 16, textAlign: 'center' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', marginBottom: 4 }}>✓ Payment successful!</p>
-              <p style={{ fontSize: 11, color: '#555' }}>Order ID: {paypalSuccess.slice(0, 16)}...</p>
-              <p style={{ fontSize: 11, color: '#555', marginTop: 4 }}>Check WhatsApp for your credentials.</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Error state */}
-        <AnimatePresence>
-          {paypalError && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', marginBottom: 16, textAlign: 'center' }}>
-              <p style={{ fontSize: 12, color: '#f87171' }}>Payment failed. Please try again or contact support.</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* CTA */}
         {product.stockOut ? (
           <div style={{ width: '100%', height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 14, fontWeight: 600 }}>
@@ -283,33 +165,19 @@ export default function ProductPage() {
             {ordering ? 'Opening WhatsApp...' : 'Order via WhatsApp'}
           </button>
         ) : (
-          // ── PayPal buttons (provider is mounted at page level above) ──
-          <div>
-            {!showPayPal ? (
-              <button onClick={() => { setShowPayPal(true); setPaypalError(false) }}
-                style={{ width: '100%', height: 52, borderRadius: 14, background: '#FFD140', border: 'none', color: '#000', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#003087"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.825l-1.151 7.29h3.895c.524 0 .968-.382 1.05-.9l.944-5.985h1.994c4.298 0 6.478-2.135 7.252-6.2z"/></svg>
-                Pay with PayPal
-              </button>
-            ) : (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ borderRadius: 14, overflow: 'hidden' }}>
-                <PayPalButtons_
-                  total={total}
-                  paypalCurrency={paypalCurrency}
-                  productName={product.name}
-                  months={selectedMonths}
-                  onSuccess={handlePayPalSuccess}
-                  onError={() => setPaypalError(true)}
-                />
-                <button onClick={() => setShowPayPal(false)}
-                  style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer' }}>
-                  Cancel
-                </button>
-              </motion.div>
-            )}
-          </div>
+          // ── PayPal — opens dedicated checkout page in new tab ──
+          <button onClick={handlePayPalCheckout}
+            style={{ width: '100%', height: 52, borderRadius: 14, background: '#FFD140', border: 'none', color: '#003087', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity 0.2s', letterSpacing: '-0.01em' }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+            <svg height="20" viewBox="0 0 124 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M46.211 6.749h-6.839a.95.95 0 0 0-.939.802l-2.766 17.537a.57.57 0 0 0 .564.658h3.265a.95.95 0 0 0 .939-.803l.746-4.73a.95.95 0 0 1 .938-.803h2.165c4.505 0 7.105-2.18 7.784-6.5.306-1.89.013-3.375-.872-4.415-.972-1.142-2.696-1.746-4.985-1.746zM47 13.154c-.374 2.454-2.249 2.454-4.062 2.454h-1.032l.724-4.583a.57.57 0 0 1 .563-.481h.473c1.235 0 2.4 0 3.002.704.359.42.469 1.044.332 1.906zM66.654 13.075h-3.275a.57.57 0 0 0-.563.481l-.145.916-.229-.332c-.709-1.029-2.29-1.373-3.868-1.373-3.619 0-6.71 2.741-7.312 6.586-.313 1.918.132 3.752 1.22 5.031.998 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .562.66h2.95a.95.95 0 0 0 .939-.803l1.77-11.209a.568.568 0 0 0-.561-.658zm-4.565 6.374c-.316 1.871-1.801 3.127-3.695 3.127-.951 0-1.711-.305-2.199-.883-.484-.574-.668-1.391-.514-2.301.295-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.499.589.697 1.411.554 2.317zM84.096 13.075h-3.291a.954.954 0 0 0-.787.417l-4.539 6.686-1.924-6.425a.953.953 0 0 0-.912-.678h-3.234a.57.57 0 0 0-.541.754l3.625 10.638-3.408 4.811a.57.57 0 0 0 .465.9h3.287a.949.949 0 0 0 .781-.408l10.946-15.8a.57.57 0 0 0-.468-.895z" fill="#003087"/>
+              <path d="M94.992 6.749h-6.84a.95.95 0 0 0-.938.802l-2.766 17.537a.569.569 0 0 0 .562.658h3.51a.665.665 0 0 0 .656-.562l.785-4.971a.95.95 0 0 1 .938-.803h2.164c4.506 0 7.105-2.18 7.785-6.5.307-1.89.012-3.375-.873-4.415-.971-1.142-2.694-1.746-4.983-1.746zm.789 6.405c-.373 2.454-2.248 2.454-4.062 2.454h-1.031l.725-4.583a.568.568 0 0 1 .562-.481h.473c1.234 0 2.4 0 3.002.704.359.42.468 1.044.331 1.906zM115.434 13.075h-3.273a.567.567 0 0 0-.562.481l-.145.916-.23-.332c-.709-1.029-2.289-1.373-3.867-1.373-3.619 0-6.709 2.741-7.311 6.586-.312 1.918.131 3.752 1.219 5.031 1 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .564.66h2.949a.95.95 0 0 0 .938-.803l1.771-11.209a.571.571 0 0 0-.565-.658zm-4.565 6.374c-.314 1.871-1.801 3.127-3.695 3.127-.949 0-1.711-.305-2.199-.883-.484-.574-.666-1.391-.514-2.301.297-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.501.589.699 1.411.554 2.317zM119.295 7.23l-2.807 17.858a.569.569 0 0 0 .562.658h2.822c.524 0 .969-.381.938-.803l2.768-17.536a.57.57 0 0 0-.562-.659h-3.158a.571.571 0 0 0-.563.482z" fill="#009cde"/>
+              <path d="M7.266 29.154l.523-3.322-1.165-.027H1.061L4.927 1.292a.316.316 0 0 1 .314-.268h9.38c3.114 0 5.263.648 6.385 1.927.526.6.861 1.227 1.023 1.917.17.724.173 1.589.007 2.644l-.012.077v.676l.526.298a3.69 3.69 0 0 1 1.065.812c.45.513.741 1.165.864 1.938.127.795.085 1.741-.123 2.812-.24 1.232-.628 2.305-1.152 3.183a6.547 6.547 0 0 1-1.825 2.07c-.696.49-1.523.861-2.458 1.104-.907.237-1.945.357-3.083.357h-.734c-.524 0-1.033.188-1.434.528a2.249 2.249 0 0 0-.744 1.362l-.055.299-1.029 6.527-.047.239c-.012.076-.032.114-.059.139a.158.158 0 0 1-.101.038H7.266z" fill="#003087"/>
+              <path d="M23.048 7.667c-.028.179-.06.362-.096.55-1.237 6.351-5.469 8.545-10.874 8.545H9.326c-.661 0-1.218.48-1.321 1.132L6.596 26.83l-.399 2.533a.704.704 0 0 0 .695.814h4.881c.578 0 1.069-.420 1.16-.990l.048-.248.919-5.832.059-.32c.09-.572.582-.992 1.16-.992h.73c4.729 0 8.431-1.92 9.513-7.476.452-2.321.218-4.259-.978-5.622a4.667 4.667 0 0 0-1.336-1.030z" fill="#009cde"/>
+              <path d="M21.791 7.151a9.757 9.757 0 0 0-1.203-.267 15.284 15.284 0 0 0-2.426-.177h-7.352a1.172 1.172 0 0 0-1.159.992L8.05 17.605l-.045.289a1.336 1.336 0 0 1 1.321-1.132h2.752c5.405 0 9.637-2.195 10.874-8.545.037-.188.068-.371.096-.55a6.645 6.645 0 0 0-1.257-.516z" fill="#012169"/>
+            </svg>
+          </button>
         )}
 
         <p style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 12 }}>
@@ -400,17 +268,7 @@ export default function ProductPage() {
           </motion.div>
 
           {/* ── Right col — Order card (PayPalScriptProvider lives here for non-INR) ── */}
-          {needsPayPal ? (
-            <PayPalScriptProvider
-              options={{
-                clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!,
-                currency: paypalCurrency,
-                intent: 'capture',
-              }}
-            >
-              {orderCard}
-            </PayPalScriptProvider>
-          ) : orderCard}
+          {orderCard}
         </div>
       </div>
       <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
