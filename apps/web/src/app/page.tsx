@@ -463,10 +463,13 @@ export default function Home() {
         }} />
 
         {/* ── HERO CONTENT ─────────────────────────────────── */}
-        <div style={{
+        <div className="pk-hero-fullscreen" style={{
           position: 'relative', zIndex: 3,
           height: '100vh',
-          minHeight: '-webkit-fill-available',
+          // dvh = dynamic viewport height, excludes mobile browser chrome (address bar)
+          // This fixes content appearing off-center on Android/iOS
+          // @ts-ignore — dvh is widely supported but not yet in TS types
+          minHeight: 'min(100dvh, 100vh)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           textAlign: 'center', padding: '80px 24px 40px', boxSizing: 'border-box',

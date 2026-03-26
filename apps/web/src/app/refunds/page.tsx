@@ -39,7 +39,7 @@ export default function RefundPolicy() {
           </Section>
 
           <Section title="Contact Us">
-            If you have any questions about our refund policy or want to initiate a refund request, reach us on WhatsApp at +91 8111956481 or email us at aaronjthomas.cj@gmail.com. We are available 7 days a week from 10am to 10pm IST.
+            If you have any questions about our refund policy or want to initiate a refund request, reach us on WhatsApp at +91 8111956481 or email us at admin@primekeys.app. We are available 7 days a week from 10am to 10pm IST.
           </Section>
 
         </div>

@@ -59,7 +59,7 @@ export default function TermsOfUse() {
           </Section>
 
           <Section title="12. Contact">
-            For any questions about these Terms of Use, contact us via WhatsApp at +91 8111956481 or email aaronjthomas.cj@gmail.com.
+            For any questions about these Terms of Use, contact us via WhatsApp at +91 8111956481 or email admin@primekeys.app.
           </Section>
 
         </div>

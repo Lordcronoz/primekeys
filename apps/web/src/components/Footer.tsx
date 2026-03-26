@@ -18,9 +18,11 @@ const PRIMEKEYS_LINKS = [
 ]
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Terms of Use',   href: '/terms'   },
-  { label: 'Refund Policy',  href: '/refunds' },
+  { label: 'Privacy Policy',   href: '/privacy'  },
+  { label: 'Terms of Use',     href: '/terms'    },
+  { label: 'Refund Policy',    href: '/refunds'  },
+  { label: 'Shipping Policy',  href: '/shipping' },
+  { label: 'Contact Us',       href: '/contact'  },
 ]
 
 export default function Footer() {

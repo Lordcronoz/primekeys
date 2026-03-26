@@ -799,6 +799,16 @@ img {
     padding: 60px 20px 48px !important;
   }
 
+  /* Hero full-screen section — fix vertical centering on mobile.
+     Equal top/bottom padding so flexbox centers content correctly.
+     100dvh = dynamic viewport height (excludes mobile browser chrome) */
+  .pk-hero-fullscreen {
+    padding-top: 64px !important;
+    padding-bottom: 64px !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
+
   /* Featured products grid — 2 cols */
   .pk-featured-grid {
     grid-template-columns: repeat(2, 1fr) !important;
