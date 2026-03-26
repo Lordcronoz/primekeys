@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DURATIONS, CURRENCIES } from '@primekeys/shared'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { useCurrency } from '@/context/CurrencyContext'
-import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
+import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import Link from 'next/link'
 import { ArrowLeft, Check, MessageCircle, Shield, Zap, Clock } from 'lucide-react'
 
@@ -43,7 +43,41 @@ function calcPrice(baseINR: number, months: number, currencyCode: string) {
   return { total, perMonth, symbol: curr.symbol, saveLabel: dur.saveLabel }
 }
 
-// ── PayPal buttons (must be rendered inside a PayPalScriptProvider) ──────────
+// ── PayPal SDK error fallback ─────────────────────────────
+function PayPalSdkFallback() {
+  return (
+    <div style={{
+      padding: '18px 16px',
+      borderRadius: 12,
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      textAlign: 'center',
+    }}>
+      <p style={{ fontSize: 13, color: '#a1a1a6', marginBottom: 12, lineHeight: 1.6 }}>
+        PayPal is temporarily unavailable.
+        <br />Please contact us to complete your order.
+      </p>
+      <a
+        href="https://wa.me/918111956481"
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px', borderRadius: 10,
+          background: 'rgba(37,211,102,0.1)',
+          border: '1px solid rgba(37,211,102,0.25)',
+          color: '#25D366', fontSize: 13, fontWeight: 600,
+          textDecoration: 'none',
+        }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.532 5.864L.057 23.57a.5.5 0 0 0 .614.612l5.807-1.461A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.93 0-3.738-.52-5.287-1.424l-.369-.22-3.849.968.999-3.75-.241-.385A9.943 9.943 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Chat on WhatsApp
+      </a>
+    </div>
+  )
+}
+
+// ── PayPal buttons with built-in SDK error detection ─────────────────────────
 function PayPalButtons_(
   props: {
     total: number
@@ -54,7 +88,19 @@ function PayPalButtons_(
     onError: () => void
   }
 ) {
+  const [{ isResolved, isRejected }] = usePayPalScriptReducer()
   const { total, paypalCurrency, productName, months, onSuccess, onError } = props
+
+  // SDK script failed to load (e.g. invalid/missing client ID)
+  if (isRejected) return <PayPalSdkFallback />
+
+  // Still loading the SDK script
+  if (!isResolved) return (
+    <div style={{ height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    </div>
+  )
+
   return (
     <PayPalButtons
       style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 44 }}
