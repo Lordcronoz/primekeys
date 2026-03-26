@@ -2,10 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { CurrencyProvider } from '@/context/CurrencyContext'
-import { Nav } from '@/components/Nav'
-import { PreloaderWrapper } from '@/components/PreloaderWrapper'
-import Footer from '@/components/Footer'
 import { MaintenanceGate } from '@/components/ui/MaintenanceGate'
+import { ShellWrapper } from '@/components/ShellWrapper'
 
 export const metadata: Metadata = {
   title: 'PRIMEKEYS — Premium Subscriptions',
@@ -18,11 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
@@ -31,13 +25,7 @@ export default function RootLayout({
         <AuthProvider>
           <CurrencyProvider>
             <MaintenanceGate>
-              <PreloaderWrapper>
-                <Nav />
-                <main className="pt-[48px]">
-                  {children}
-                </main>
-                <Footer />
-              </PreloaderWrapper>
+              <ShellWrapper>{children}</ShellWrapper>
             </MaintenanceGate>
           </CurrencyProvider>
         </AuthProvider>
