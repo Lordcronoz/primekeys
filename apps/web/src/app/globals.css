@@ -856,11 +856,6 @@ img {
     -webkit-backdrop-filter: blur(10px) !important;
   }
 
-  /* Disable will-change on everything — prevents unnecessary GPU layers */
-  * {
-    will-change: auto !important;
-  }
-
   /* Orb backgrounds — static, no animation */
   .orb-a, .orb-b, .orb-c {
     animation: none !important;

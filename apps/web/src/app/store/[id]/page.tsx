@@ -25,7 +25,7 @@ const BRAND_ICONS: Record<string, string> = {
 }
 
 // ── PayPal supported currencies ───────────────────────────
-const PAYPAL_CURRENCIES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'MYR', 'AED']
+const PAYPAL_CURRENCIES = ['EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'NZD', 'PHP', 'SGD', 'USD']
 
 function formatPrice(amount: number, currencyCode: string): string {
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
@@ -60,7 +60,7 @@ function PayPalCheckout({
   onError: () => void
 }) {
   // MYR and AED not supported by PayPal — fallback to USD
-  const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'USD'
+  const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'EUR'
 
   return (
     <PayPalScriptProvider options={{
