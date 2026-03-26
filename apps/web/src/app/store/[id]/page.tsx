@@ -1,11 +1,12 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { DURATIONS, CURRENCIES, TEAM_ROLES } from '@primekeys/shared'
+import { DURATIONS, CURRENCIES } from '@primekeys/shared'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { useCurrency } from '@/context/CurrencyContext'
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
 import Link from 'next/link'
 import { ArrowLeft, Check, MessageCircle, Shield, Zap, Clock } from 'lucide-react'
 
@@ -23,6 +24,9 @@ const BRAND_ICONS: Record<string, string> = {
   appletv:  svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`),
 }
 
+// ── PayPal supported currencies ───────────────────────────
+const PAYPAL_CURRENCIES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'MYR', 'AED']
+
 function formatPrice(amount: number, currencyCode: string): string {
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
   if (currencyCode === 'INR') return `${curr.symbol}${Math.round(amount)}`
@@ -39,13 +43,65 @@ function calcPrice(baseINR: number, months: number, currencyCode: string) {
   return { total, perMonth, symbol: curr.symbol, saveLabel: dur.saveLabel }
 }
 
+// ── PayPal checkout component ─────────────────────────────
+function PayPalCheckout({
+  total,
+  currencyCode,
+  productName,
+  months,
+  onSuccess,
+  onError,
+}: {
+  total: number
+  currencyCode: string
+  productName: string
+  months: number
+  onSuccess: (orderID: string) => void
+  onError: () => void
+}) {
+  // MYR and AED not supported by PayPal — fallback to USD
+  const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'USD'
+
+  return (
+    <PayPalScriptProvider options={{
+      clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!,
+      currency: paypalCurrency,
+      intent: 'capture',
+    }}>
+      <PayPalButtons
+        style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 44 }}
+        createOrder={(_data, actions) => {
+          return actions.order.create({
+            intent: 'CAPTURE',
+            purchase_units: [{
+              amount: {
+                currency_code: paypalCurrency,
+                value: total.toFixed(2),
+              },
+              description: `PRIMEKEYS — ${productName} (${months} month${months > 1 ? 's' : ''})`,
+            }],
+          })
+        }}
+        onApprove={async (_data, actions) => {
+          const order = await actions.order!.capture()
+          onSuccess(order.id!)
+        }}
+        onError={() => onError()}
+      />
+    </PayPalScriptProvider>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────
 export default function ProductPage() {
   const params = useParams()
-  const router = useRouter()
   const { currencyCode } = useCurrency()
   const allProducts = useCatalogue()
   const [selectedMonths, setSelectedMonths] = useState(1)
   const [ordering, setOrdering] = useState(false)
+  const [paypalSuccess, setPaypalSuccess] = useState<string | null>(null)
+  const [paypalError, setPaypalError] = useState(false)
+  const [showPayPal, setShowPayPal] = useState(false)
 
   const id = typeof params.id === 'string' ? params.id : params.id?.[0]
   const product = allProducts.find(p => p.id === id)
@@ -63,15 +119,25 @@ export default function ProductPage() {
   const { total, perMonth, saveLabel } = calcPrice(product.effectiveINR, selectedMonths, currencyCode)
   const originalTotal = product.discount ? calcPrice(product.customPrice ?? product.baseINR, selectedMonths, currencyCode).total : null
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
-  const isUPI = curr.pay === 'upi'
+  const isUPI = currencyCode === 'INR'
 
-  const handleOrder = () => {
+  const handleUPIOrder = () => {
     setOrdering(true)
     const msg = encodeURIComponent(
       `Hi! I'd like to order *${product.name}* — ${selectedMonths} month${selectedMonths > 1 ? 's' : ''} for ${formatPrice(total, currencyCode)}.\n\nPlease confirm and send payment details.`
     )
     window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
     setTimeout(() => setOrdering(false), 2000)
+  }
+
+  const handlePayPalSuccess = (orderID: string) => {
+    setPaypalSuccess(orderID)
+    setShowPayPal(false)
+    // Notify via WhatsApp
+    const msg = encodeURIComponent(
+      `Hi! I just completed a PayPal payment for *${product.name}* — ${selectedMonths} month${selectedMonths > 1 ? 's' : ''}.\n\n💳 PayPal Order ID: ${orderID}\n💰 Amount: ${formatPrice(total, currencyCode)}\n\nPlease confirm and send my credentials.`
+    )
+    window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
   }
 
   return (
@@ -158,11 +224,10 @@ export default function ProductPage() {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
             className="pk-sticky-card" style={{ position: 'sticky', top: 72, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, overflow: 'hidden' }}>
 
-            {/* Color top bar */}
             <div style={{ height: 3, background: `linear-gradient(to right, ${product.color}, transparent)` }} />
 
             <div style={{ padding: 24 }}>
-              {/* Price display */}
+              {/* Price */}
               <div style={{ marginBottom: 20 }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Price per month</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -177,14 +242,14 @@ export default function ProductPage() {
                 )}
               </div>
 
-              {/* Duration selector */}
+              {/* Duration */}
               <p style={{ fontSize: 11, fontWeight: 600, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Select duration</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                 {DURATIONS.map(dur => {
                   const { total: t, perMonth: pm } = calcPrice(product.effectiveINR, dur.months, currencyCode)
                   const sel = selectedMonths === dur.months
                   return (
-                    <button key={dur.months} onClick={() => setSelectedMonths(dur.months)}
+                    <button key={dur.months} onClick={() => { setSelectedMonths(dur.months); setShowPayPal(false) }}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${sel ? product.color + '66' : 'rgba(255,255,255,0.07)'}`, background: sel ? `${product.color}12` : 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${sel ? product.color : '#444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -212,23 +277,74 @@ export default function ProductPage() {
                   </div>
                 </div>
                 <p style={{ fontSize: 10, color: '#444', marginTop: 6 }}>
-                  Pay via {isUPI ? 'UPI' : 'Wise'} · Delivered on WhatsApp within 5 min
+                  Pay via {isUPI ? 'UPI' : 'PayPal'} · Delivered on WhatsApp within 5 min
                 </p>
               </div>
 
+              {/* Success state */}
+              <AnimatePresence>
+                {paypalSuccess && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    style={{ padding: '14px 16px', borderRadius: 12, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', marginBottom: 16, textAlign: 'center' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', marginBottom: 4 }}>✓ Payment successful!</p>
+                    <p style={{ fontSize: 11, color: '#555' }}>Order ID: {paypalSuccess.slice(0, 16)}...</p>
+                    <p style={{ fontSize: 11, color: '#555', marginTop: 4 }}>Check WhatsApp for your credentials.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Error state */}
+              <AnimatePresence>
+                {paypalError && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    style={{ padding: '12px 16px', borderRadius: 12, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', marginBottom: 16, textAlign: 'center' }}>
+                    <p style={{ fontSize: 12, color: '#f87171' }}>Payment failed. Please try again or contact support.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* CTA */}
               {product.stockOut ? (
-                <div style={{ width: '100%', height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#555', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ width: '100%', height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 14, fontWeight: 600 }}>
                   Currently Out of Stock
                 </div>
-              ) : (
-                <button onClick={handleOrder} disabled={ordering}
+              ) : isUPI ? (
+                // ── UPI / WhatsApp button ──
+                <button onClick={handleUPIOrder} disabled={ordering}
                   style={{ width: '100%', height: 52, borderRadius: 14, background: ordering ? 'rgba(212,175,55,0.4)' : 'linear-gradient(135deg, #D4AF37, #C49A20)', border: 'none', color: '#000', fontSize: 15, fontWeight: 700, cursor: ordering ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity 0.2s', boxShadow: '0 0 24px rgba(212,175,55,0.2)' }}
                   onMouseEnter={e => { if (!ordering) (e.currentTarget.style.opacity = '0.9') }}
                   onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
                   <MessageCircle size={17} />
                   {ordering ? 'Opening WhatsApp...' : 'Order via WhatsApp'}
                 </button>
+              ) : (
+                // ── PayPal button ──
+                <div>
+                  {!showPayPal ? (
+                    <button onClick={() => { setShowPayPal(true); setPaypalError(false) }}
+                      style={{ width: '100%', height: 52, borderRadius: 14, background: '#FFD140', border: 'none', color: '#000', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity 0.2s' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#003087"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.825l-1.151 7.29h3.895c.524 0 .968-.382 1.05-.9l.944-5.985h1.994c4.298 0 6.478-2.135 7.252-6.2z"/></svg>
+                      Pay with PayPal
+                    </button>
+                  ) : (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ borderRadius: 14, overflow: 'hidden' }}>
+                      <PayPalCheckout
+                        total={total}
+                        currencyCode={currencyCode}
+                        productName={product.name}
+                        months={selectedMonths}
+                        onSuccess={handlePayPalSuccess}
+                        onError={() => setPaypalError(true)}
+                      />
+                      <button onClick={() => setShowPayPal(false)}
+                        style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
               )}
 
               <p style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 12 }}>
