@@ -799,14 +799,19 @@ img {
     padding: 60px 20px 48px !important;
   }
 
-  /* Hero full-screen section — fix vertical centering on mobile.
-     Equal top/bottom padding so flexbox centers content correctly.
-     100dvh = dynamic viewport height (excludes mobile browser chrome) */
+  /* Hero full-screen section — correct height on mobile.
+     calc(100dvh - 48px) = visible area minus nav height,
+     with equal padding so flex content is truly centered */
   .pk-hero-fullscreen {
-    padding-top: 64px !important;
-    padding-bottom: 64px !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
+    height: calc(100dvh - 48px) !important;
+    min-height: calc(100dvh - 48px) !important;
+    padding-top: 40px !important;
+    padding-bottom: 40px !important;
+  }
+
+  /* Reduce GPU overdraw on mobile — this stops jank on mid-range devices */
+  [style*="willChange"], [style*="will-change"] {
+    will-change: auto !important;
   }
 
   /* Featured products grid — 2 cols */

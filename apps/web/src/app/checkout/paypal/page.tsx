@@ -244,9 +244,9 @@ function PayPalCheckoutContent() {
 
               {/* Back link */}
               <div style={{ textAlign: 'center', marginTop: 24 }}>
-                <button onClick={() => window.close()}
+                <button onClick={() => router.back()}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
-                  <ArrowLeft size={13} /> Cancel and close
+                  <ArrowLeft size={13} /> Go back
                 </button>
               </div>
 

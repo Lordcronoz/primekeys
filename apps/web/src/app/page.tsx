@@ -465,14 +465,16 @@ export default function Home() {
         {/* ── HERO CONTENT ─────────────────────────────────── */}
         <div className="pk-hero-fullscreen" style={{
           position: 'relative', zIndex: 3,
-          height: '100vh',
-          // dvh = dynamic viewport height, excludes mobile browser chrome (address bar)
-          // This fixes content appearing off-center on Android/iOS
-          // @ts-ignore — dvh is widely supported but not yet in TS types
-          minHeight: 'min(100dvh, 100vh)',
+          // calc(100dvh - 48px) accounts for the nav height (main has pt-[48px])
+          // This ensures the content is centered in EXACTLY the visible viewport
+          height: 'calc(100vh - 48px)',
+          minHeight: 'calc(100dvh - 48px)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          textAlign: 'center', padding: '80px 24px 40px', boxSizing: 'border-box',
+          textAlign: 'center',
+          // Symmetric padding so flex centering isn't offset
+          padding: '56px 24px 56px',
+          boxSizing: 'border-box',
         }}>
 
           {/* Gold badge pill */}

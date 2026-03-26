@@ -86,7 +86,7 @@ export default function ProductPage() {
       currency: paypalCurrency,
       icon:     encodeURIComponent(BRAND_ICONS[product.id] || ''),
     })
-    window.open(`/checkout/paypal?${params.toString()}`, '_blank', 'width=520,height=700,scrollbars=yes')
+    window.location.href = `/checkout/paypal?${params.toString()}`
   }
 
   const orderCard = (
