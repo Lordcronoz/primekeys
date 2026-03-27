@@ -7,6 +7,7 @@ import ordersRouter   from './routes/orders'
 import paymentsRouter from './routes/payments'
 import portalRouter   from './routes/portal'
 import activateRouter from './routes/activate'
+import paypalRouter   from './routes/paypal'
 
 dotenv.config()
 
@@ -32,6 +33,7 @@ app.use('/api', ordersRouter)
 app.use('/api', paymentsRouter)
 app.use('/api', portalRouter)
 app.use('/api', activateRouter)
+app.use('/api', paypalRouter)
 
 // ── 404 ─────────────────────────────────────────────────
 app.use((_, res) => {

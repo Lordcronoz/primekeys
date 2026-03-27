@@ -83,3 +83,19 @@ export async function renewClient(
     body: JSON.stringify(payload),
   })
 }
+
+export async function confirmPayPalOrder(payload: {
+  paypalOrderId: string
+  name:          string
+  email:         string
+  phone:         string
+  product:       string
+  duration:      number
+  total:         number
+  currency:      string
+}) {
+  return request('/api/paypal-confirm', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}

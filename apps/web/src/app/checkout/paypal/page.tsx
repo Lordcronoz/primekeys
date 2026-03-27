@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Lock, ArrowLeft, Check, MessageCircle } from 'lucide-react'
+import { confirmPayPalOrder } from '@/lib/api'
 
 const CLIENT_ID  = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!
 const IS_SANDBOX = process.env.NEXT_PUBLIC_PAYPAL_SANDBOX === 'true'
@@ -69,6 +70,10 @@ function CheckoutContent() {
   const total       = parseFloat(params.get('total')  || '0')
   const currency    = params.get('currency') || 'USD'
   const iconSrc     = params.get('icon')     || ''
+  const custName    = params.get('custName') || ''
+  const custEmail   = params.get('email')    || ''
+  const custPhone   = params.get('phone')    || ''
+  const productId   = params.get('productId')|| productName.toLowerCase()
 
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError]     = useState(false)
@@ -77,10 +82,27 @@ function CheckoutContent() {
   const perMonth = (total / months).toFixed(2)
   const desc     = `PRIMEKEYS — ${productName} (${months} month${months > 1 ? 's' : ''})`
 
-  const handleSuccess = (orderId: string) => {
-    setSuccess(orderId)
+  const handleSuccess = async (paypalOrderId: string) => {
+    try {
+      // 1. Create order in Firestore + send invoice email automatically
+      await confirmPayPalOrder({
+        paypalOrderId,
+        name:     custName,
+        email:    custEmail,
+        phone:    custPhone,
+        product:  productId,
+        duration: months,
+        total,
+        currency,
+      })
+    } catch (e) {
+      console.error('[PayPal confirm]', e)
+      // Non-fatal — still show success and open WhatsApp
+    }
+    setSuccess(paypalOrderId)
+    // 2. Also open WhatsApp as backup notification
     const msg = encodeURIComponent(
-      `Hi! PayPal payment done.\n\nProduct: ${productName}\nDuration: ${months} month${months > 1 ? 's' : ''}\nAmount: ${currency} ${total}\nOrder ID: ${orderId}\n\nPlease send my credentials.`
+      `Hi! PayPal payment done.\n\nProduct: ${productName}\nDuration: ${months} month${months > 1 ? 's' : ''}\nAmount: ${currency} ${total}\nPayPal ID: ${paypalOrderId}\n\nPlease send my credentials.`
     )
     window.open(`https://wa.me/918111956481?text=${msg}`, '_blank')
   }

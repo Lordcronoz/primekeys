@@ -25,6 +25,7 @@ type Product = {
   discount?: number; stockOut?: boolean; customPrice?: number; isCustom?: boolean
   featured?: boolean; flashSaleEnd?: string; bulkDiscount?: number; bulkMinMonths?: number
   customLogo?: string // base64 uploaded logo
+  customPrices?: Record<string, number> // per-currency price overrides e.g. { USD: 5.99, AED: 22 }
 }
 
 const BASE_PRODUCTS: Product[] = PRODUCTS.map(p => ({
@@ -109,7 +110,7 @@ export function CatalogueSection() {
   const [firestoreData, setFirestoreData] = useState<Record<string, any>>({})
   const [saving, setSaving] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
-  const [editValues, setEditValues] = useState<Partial<Product> & { flashSaleHours?: number }>({})
+  const [editValues, setEditValues] = useState<Partial<Product> & { flashSaleHours?: number; editPrices?: Record<string, string> }>({})
   const [saved, setSaved] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [newSvc, setNewSvc] = useState({ name: '', basePrice: '', category: 'streaming', emoji: '📦' })
@@ -139,6 +140,7 @@ export function CatalogueSection() {
           bulkDiscount:  p.bulkDiscount ?? 0,
           bulkMinMonths: p.bulkMinMonths ?? 3,
           customLogo:    p.customLogo ?? null,
+          customPrices:  p.customPrices ?? null,
         }
       }, { merge: true })
       setSaved(p.id); setTimeout(() => setSaved(null), 2000)
@@ -279,24 +281,43 @@ export function CatalogueSection() {
                 <div style={{ padding:'16px 18px 18px', borderTop:'1px solid rgba(255,255,255,0.05)', background:'rgba(212,175,55,0.02)' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:12, marginBottom:14 }}>
                     <div style={{ gridColumn: 'span 2' }}>
-                      <label style={lbl}>Base Price (INR) — reflects in all currencies</label>
+                      <label style={lbl}>Base Price (INR) — auto-converts all currencies</label>
                       <div style={{position:'relative'}}>
                         <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#6e6e73',fontWeight:700,fontFamily:'monospace'}}>INR</span>
                         <input type="number" min={1} value={editValues.customPrice??editValues.basePrice??p.basePrice} onChange={e=>setEditValues(v=>({...v,customPrice:Number(e.target.value)}))} style={{...fld,paddingLeft:44}}/>
                       </div>
                       <p style={{fontSize:10,color:'#444',marginTop:4}}>Default base: ₹{p.basePrice} · Customers see their local currency automatically</p>
-                      {/* Live multi-currency preview */}
-                      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
+                    </div>
+
+                    {/* Per-currency price overrides */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{...lbl, color:'#D4AF37'}}>Custom Prices Per Currency — override auto-conversion</label>
+                      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:8, marginTop:4}}>
                         {(['USD','AED','GBP','EUR','AUD','SGD','CAD','MYR'] as const).map(code => {
                           const c = CURRENCIES[code]
-                          const val = parseFloat(((editValues.customPrice??editValues.basePrice??p.basePrice) * c.rate).toFixed(2))
+                          const baseINR = editValues.customPrice ?? editValues.basePrice ?? p.basePrice
+                          const autoVal = parseFloat((baseINR * c.rate).toFixed(2))
+                          const storedVal = editValues.editPrices?.[code] ?? String((p.customPrices?.[code] ?? autoVal))
                           return (
-                            <span key={code} style={{fontSize:10,padding:'3px 8px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,color:'#6e6e73',fontFamily:'monospace',whiteSpace:'nowrap'}}>
-                              {c.flag} {c.symbol}{val}
-                            </span>
+                            <div key={code}>
+                              <label style={{...lbl, color:'#555', marginBottom:3}}>{c.flag} {code}</label>
+                              <div style={{position:'relative'}}>
+                                <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#D4AF37',fontWeight:700}}>{c.symbol.trim()}</span>
+                                <input
+                                  type="number" min={0.01} step={0.01}
+                                  value={storedVal}
+                                  onChange={e => setEditValues(v => ({ ...v, editPrices: { ...(v.editPrices||{}), [code]: e.target.value } }))}
+                                  style={{...fld, paddingLeft: c.symbol.trim().length > 1 ? 36 : 22, fontSize:12}}
+                                  onFocus={e => (e.currentTarget.style.borderColor='rgba(212,175,55,0.5)')}
+                                  onBlur={e => (e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}
+                                />
+                              </div>
+                              <p style={{fontSize:9,color:'#333',marginTop:2}}>auto: {c.symbol.trim()}{autoVal}</p>
+                            </div>
                           )
                         })}
                       </div>
+                      <p style={{fontSize:10,color:'#444',marginTop:6}}>Leave as auto-converted or set a custom price per currency. These prices show directly to customers.</p>
                     </div>
                     <div>
                       <label style={lbl}>Discount %</label>
@@ -335,7 +356,15 @@ export function CatalogueSection() {
                   </div>
                   <button onClick={()=>{
                     const flashEnd=(editValues.flashSaleHours||0)>0?new Date(Date.now()+(editValues.flashSaleHours||0)*3600000).toISOString():null
-                    const u={...p,...editValues,flashSaleEnd:flashEnd||p.flashSaleEnd}
+                    // Build customPrices from editPrices — filter out empty/NaN
+                    const customPrices: Record<string,number> = {}
+                    if (editValues.editPrices) {
+                      Object.entries(editValues.editPrices).forEach(([code, val]) => {
+                        const n = parseFloat(val)
+                        if (!isNaN(n) && n > 0) customPrices[code] = n
+                      })
+                    }
+                    const u={...p,...editValues,flashSaleEnd:flashEnd||p.flashSaleEnd,customPrices:Object.keys(customPrices).length?customPrices:p.customPrices}
                     setProducts(prev=>prev.map(x=>x.id===p.id?u:x)); save(u)
                   }} disabled={isSav} style={{ height:36, padding:'0 20px', background:isSav?'rgba(212,175,55,0.3)':'linear-gradient(135deg,#D4AF37,#C49A20)', color:'#000', border:'none', borderRadius:9, fontSize:13, fontWeight:700, cursor:isSav?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:6 }}>
                     {isSav?<Spin/>:<><Save size={12}/>Save Changes</>}
