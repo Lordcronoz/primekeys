@@ -18,16 +18,35 @@ function invoiceNumber(orderId: string): string {
 
 // ── Invoice / Order confirmation to customer ─────────────
 export async function sendOrderConfirmation(data: {
-  to:       string
-  name:     string
-  orderId:  string
-  product:  string
-  duration: number
-  total:    number
-  currency: string
+  to:            string
+  name:          string
+  orderId:       string
+  product:       string
+  duration:      number
+  total:         number
+  currency:      string
+  paymentMethod?: string   // 'paypal' | 'upi' | 'wise' | undefined
+  paypalOrderId?: string
 }) {
-  const isINR = data.currency === 'INR'
-  const paymentSection = isINR
+  const isINR    = data.currency === 'INR'
+  const isPayPal = data.paymentMethod === 'paypal'
+
+  const paymentSection = isPayPal
+    ? `
+      <div style="background:#0a0a0a;border:1px solid rgba(38,194,129,0.25);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(38,194,129,0.12);display:flex;align-items:center;justify-content:center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#26C281" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <p style="font-size:13px;font-weight:700;color:#26C281;margin:0">Payment Received via PayPal</p>
+        </div>
+        <p style="font-size:13px;color:#aaa;margin:0 0 6px">Amount: <strong style="color:#D4AF37">${data.currency} ${data.total}</strong></p>
+        ${data.paypalOrderId ? `<p style="font-size:11px;color:#555;margin:0">PayPal Order ID: <span style="font-family:monospace;color:#888">${data.paypalOrderId}</span></p>` : ''}
+      </div>
+      <p style="font-size:12px;color:#555;margin:0 0 20px">Your credentials will be delivered to your WhatsApp within 5 minutes. If you face any issues, contact us below.</p>
+      <a href="https://wa.me/918111956481" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;font-size:14px;margin-bottom:8px">WhatsApp Support</a>
+    `
+    : isINR
     ? `
       <div style="background:#0a0a0a;border:1px solid rgba(212,175,55,0.25);border-radius:12px;padding:20px;margin-bottom:20px">
         <p style="font-size:13px;font-weight:700;color:#D4AF37;margin:0 0 12px">Pay via UPI</p>
@@ -207,64 +226,4 @@ export async function sendNewOrderAlert(data: {
   })
 }
 
-// ── Credentials delivery to customer ────────────────────
-export async function sendCredentials(data: {
-  to:          string
-  name:        string
-  product:     string
-  credentials: string
-}) {
-  await resend.emails.send({
-    from:    FROM,
-    to:      data.to,
-    subject: `Your ${data.product} credentials are ready — PRIMEKEYS`,
-    html: `
-      <div style="font-family:Inter,sans-serif;background:#000;color:#f0f0f0;padding:40px;max-width:520px;margin:0 auto;border-radius:16px;border:1px solid rgba(212,175,55,0.2)">
-        <div style="margin-bottom:32px">
-          <span style="font-size:22px;font-weight:700;color:#D4AF37">PRIME</span><span style="font-size:22px;font-weight:700;color:#fff">KEYS</span>
-        </div>
-        <h2 style="font-size:20px;font-weight:600;margin-bottom:8px">Your subscription is ready 🎉</h2>
-        <p style="color:#999;margin-bottom:32px">Hi ${data.name}, here are your ${data.product} credentials.</p>
-        <div style="background:#111;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid #D4AF37;white-space:pre-wrap;font-family:monospace;font-size:14px;color:#D4AF37">
-${data.credentials}
-        </div>
-        <p style="color:#999;font-size:14px">Need help setting it up? WhatsApp us anytime.</p>
-        <a href="https://wa.me/918111956481" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:12px 24px;border-radius:999px;text-decoration:none;font-size:14px;margin-top:16px">WhatsApp Support →</a>
-        <p style="color:#555;font-size:12px;margin-top:32px">Thank you for choosing PRIMEKEYS — Seraph Group of Companies</p>
-      </div>
-    `,
-  })
-}
-
-// ── New order alert to Aaron ─────────────────────────────
-export async function sendNewOrderAlert(data: {
-  orderId:  string
-  name:     string
-  email:    string
-  phone:    string
-  product:  string
-  duration: number
-  total:    number
-  currency: string
-}) {
-  await resend.emails.send({
-    from:    FROM,
-    to:      'aaronjthomas.cj@gmail.com',
-    subject: `🔔 New Order — ${data.product} — ${data.currency} ${data.total}`,
-    html: `
-      <div style="font-family:Inter,sans-serif;background:#000;color:#f0f0f0;padding:40px;max-width:520px;margin:0 auto;border-radius:16px;border:1px solid rgba(212,175,55,0.2)">
-        <h2 style="color:#D4AF37;margin-bottom:24px">New Order Received</h2>
-        <div style="background:#111;border-radius:12px;padding:20px;border:1px solid #222">
-          <div style="margin-bottom:10px"><span style="color:#666">Order ID: </span><span style="font-family:monospace;color:#D4AF37">#${data.orderId.slice(-8).toUpperCase()}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Name: </span><span>${data.name}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Email: </span><span>${data.email}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Phone: </span><span>${data.phone}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Product: </span><span>${data.product}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Duration: </span><span>${data.duration} month${data.duration > 1 ? 's' : ''}</span></div>
-          <div style="border-top:1px solid #222;padding-top:10px;margin-top:4px"><span style="color:#666">Total: </span><span style="font-weight:700;color:#D4AF37">${data.currency} ${data.total}</span></div>
-        </div>
-        <a href="https://wa.me/${data.phone.replace(/\D/g, '')}" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:12px 24px;border-radius:999px;text-decoration:none;font-size:14px;margin-top:24px">WhatsApp Customer →</a>
-      </div>
-    `,
-  })
-}
+
