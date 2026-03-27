@@ -109,7 +109,7 @@ function CheckoutContent() {
     e.preventDefault(); setLoading(true); setError('')
     try {
       const resp = await createOrder({ name: formData.name, email: formData.email, phone: formData.phone, product: product.id, duration: months, total: pricing.total, currency: currencyCode })
-      setOrder(resp.order); setStep(2)
+      setOrder({ id: resp.orderId, email: formData.email }); setStep(2)
     } catch (err: any) { setError(err.message || 'Something went wrong.') }
     finally { setLoading(false) }
   }

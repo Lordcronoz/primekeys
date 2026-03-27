@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Package, AlertTriangle, Check, X, Edit3, Save, Percent, Plus, Trash2, Zap, Star, Upload, ImageIcon } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-import { PRODUCTS } from '@primekeys/shared'
+import { PRODUCTS, CURRENCIES } from '@primekeys/shared'
 
 const enc = (s: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`
 
@@ -239,6 +239,7 @@ export function CatalogueSection() {
                     <span style={{ fontSize:17, fontWeight:800, color:p.stockOut?'#444':'#D4AF37' }}>₹{effP}</span>
                     {hasDis && <span style={{ fontSize:11, color:'#555', textDecoration:'line-through' }}>₹{p.customPrice??p.basePrice}</span>}
                     <span style={{ fontSize:10, color:'#444' }}>/mo</span>
+                    <span style={{ fontSize:9, color:'#333', padding:'1px 5px', background:'rgba(212,175,55,0.05)', borderRadius:3, fontFamily:'monospace' }}>≈ ${parseFloat((effP * 0.012).toFixed(2))} USD</span>
                     <span style={{ fontSize:10, color:'#333', padding:'1px 6px', background:'rgba(255,255,255,0.03)', borderRadius:4 }}>{p.category}</span>
                     {hasFlash && <FlashCountdown endTime={p.flashSaleEnd!}/>}
                   </div>
@@ -277,13 +278,25 @@ export function CatalogueSection() {
               {isEdit && (
                 <div style={{ padding:'16px 18px 18px', borderTop:'1px solid rgba(255,255,255,0.05)', background:'rgba(212,175,55,0.02)' }}>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:12, marginBottom:14 }}>
-                    <div>
-                      <label style={lbl}>Price Override (₹)</label>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={lbl}>Base Price (INR) — reflects in all currencies</label>
                       <div style={{position:'relative'}}>
-                        <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:12,color:'#D4AF37',fontWeight:700}}>₹</span>
-                        <input type="number" min={1} value={editValues.customPrice??editValues.basePrice??p.basePrice} onChange={e=>setEditValues(v=>({...v,customPrice:Number(e.target.value)}))} style={{...fld,paddingLeft:24}}/>
+                        <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#6e6e73',fontWeight:700,fontFamily:'monospace'}}>INR</span>
+                        <input type="number" min={1} value={editValues.customPrice??editValues.basePrice??p.basePrice} onChange={e=>setEditValues(v=>({...v,customPrice:Number(e.target.value)}))} style={{...fld,paddingLeft:44}}/>
                       </div>
-                      <p style={{fontSize:10,color:'#444',marginTop:3}}>Default: ₹{p.basePrice}</p>
+                      <p style={{fontSize:10,color:'#444',marginTop:4}}>Default base: ₹{p.basePrice} · Customers see their local currency automatically</p>
+                      {/* Live multi-currency preview */}
+                      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:8}}>
+                        {(['USD','AED','GBP','EUR','AUD','SGD','CAD','MYR'] as const).map(code => {
+                          const c = CURRENCIES[code]
+                          const val = parseFloat(((editValues.customPrice??editValues.basePrice??p.basePrice) * c.rate).toFixed(2))
+                          return (
+                            <span key={code} style={{fontSize:10,padding:'3px 8px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:6,color:'#6e6e73',fontFamily:'monospace',whiteSpace:'nowrap'}}>
+                              {c.flag} {c.symbol}{val}
+                            </span>
+                          )
+                        })}
+                      </div>
                     </div>
                     <div>
                       <label style={lbl}>Discount %</label>
