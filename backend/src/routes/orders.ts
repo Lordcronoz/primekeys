@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { orderLimiter } from '../middleware/rateLimit'
 import { validate, orderSchema } from '../middleware/validate'
 import { requireAuth } from '../middleware/auth'
-import { createOrder, getOrder } from '../lib/firestore'
+import { createOrder, getOrder, validateReferralCode } from '../lib/firestore'
 import { sendOrderConfirmation, sendNewOrderAlert } from '../lib/resend'
 import { getWhatsAppAlertLink } from '../lib/whatsapp'
 
@@ -11,10 +11,10 @@ const router = Router()
 // POST /api/order — create new order
 router.post('/order', orderLimiter, validate(orderSchema), async (req, res) => {
   try {
-    const { name, email, phone, product, duration, total, currency } = req.body
+    const { name, email, phone, product, duration, total, currency, referralCode } = req.body
 
     const orderId = await createOrder({
-      name, email, phone, product, duration, total, currency,
+      name, email, phone, product, duration, total, currency, referralCode: referralCode || '',
     })
 
     // Email customer
@@ -38,10 +38,26 @@ router.post('/order', orderLimiter, validate(orderSchema), async (req, res) => {
   }
 })
 
+// POST /api/validate-promo — check if a referral/promo code is valid
+router.post('/validate-promo', async (req, res) => {
+  try {
+    const { code } = req.body
+    if (!code || code.length < 3) {
+      res.json({ valid: false, discount: 0 })
+      return
+    }
+    const result = await validateReferralCode(code)
+    res.json(result)
+  } catch (err) {
+    console.error('validatePromo error:', err)
+    res.status(500).json({ message: 'Failed to validate code' })
+  }
+})
+
 // GET /api/order/:id — get order status
 router.get('/order/:id', requireAuth, async (req, res) => {
   try {
-    const order = await getOrder(req.params.id)
+    const order = await getOrder(req.params.id as string)
     if (!order) {
       res.status(404).json({ message: 'Order not found' })
       return

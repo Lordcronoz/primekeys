@@ -1,6 +1,7 @@
 import { Router } from 'express'
-import { requireAuth, requireTeam } from '../middleware/auth'
+import { requireAuth, requireTeam, requireFounder } from '../middleware/auth'
 import { validate, clientSchema, ticketSchema, renewSchema } from '../middleware/validate'
+import Joi from 'joi'
 import {
   createClient,
   getClients,
@@ -8,6 +9,10 @@ import {
   updateClient,
   createTicket,
   createLead,
+  getConfig,
+  updateConfig,
+  getTemplates,
+  updateTemplates,
 } from '../lib/firestore'
 
 const router = Router()
@@ -37,7 +42,7 @@ router.get('/clients', requireAuth, requireTeam, async (_req, res) => {
 // GET /api/client/:id — get single client (team only)
 router.get('/client/:id', requireAuth, requireTeam, async (req, res) => {
   try {
-    const client = await getClient(req.params.id)
+    const client = await getClient(req.params.id as string)
     if (!client) {
       res.status(404).json({ message: 'Client not found' })
       return
@@ -84,6 +89,74 @@ router.post('/lead', requireAuth, requireTeam, async (req, res) => {
   } catch (err) {
     console.error('createLead error:', err)
     res.status(500).json({ message: 'Failed to add lead' })
+  }
+})
+
+// GET /api/config — fetch system config (team only)
+router.get('/config', requireAuth, requireTeam, async (_req, res) => {
+  try {
+    const config = await getConfig()
+    res.json(config)
+  } catch (err) {
+    console.error('getConfig error:', err)
+    res.status(500).json({ message: 'Failed to fetch config' })
+  }
+})
+
+// PUT /api/config — update system config (founder only)
+router.put('/config', requireAuth, requireFounder, async (req, res) => {
+  try {
+    const schema = Joi.object({
+      upiId:         Joi.string().allow('').optional(),
+      whatsappNumber: Joi.string().allow('').optional(),
+      waApiKey:      Joi.string().allow('').optional(),
+      wiseLink:      Joi.string().allow('').optional(),
+    })
+    const { error, value } = schema.validate(req.body)
+    if (error) {
+      res.status(400).json({ message: 'Validation failed', errors: error.details.map(d => d.message) })
+      return
+    }
+    await updateConfig(value)
+    res.json({ message: 'Config updated' })
+  } catch (err) {
+    console.error('updateConfig error:', err)
+    res.status(500).json({ message: 'Failed to update config' })
+  }
+})
+
+// GET /api/templates — fetch messaging templates (team only)
+router.get('/templates', requireAuth, requireTeam, async (_req, res) => {
+  try {
+    const templates = await getTemplates()
+    res.json(templates)
+  } catch (err) {
+    console.error('getTemplates error:', err)
+    res.status(500).json({ message: 'Failed to fetch templates' })
+  }
+})
+
+// PUT /api/templates — update messaging templates (team only)
+router.put('/templates', requireAuth, requireTeam, async (req, res) => {
+  try {
+    const schema = Joi.object({
+      automation: Joi.array().items(Joi.object({
+        id:    Joi.string().required(),
+        trigger: Joi.string().required(),
+        color:  Joi.string().required(),
+        body:   Joi.string().required(),
+      })).optional(),
+    })
+    const { error, value } = schema.validate(req.body)
+    if (error) {
+      res.status(400).json({ message: 'Validation failed', errors: error.details.map(d => d.message) })
+      return
+    }
+    await updateTemplates(value)
+    res.json({ message: 'Templates updated' })
+  } catch (err) {
+    console.error('updateTemplates error:', err)
+    res.status(500).json({ message: 'Failed to update templates' })
   }
 })
 
