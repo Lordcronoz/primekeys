@@ -10,10 +10,11 @@ import {
   Key, Send, Clock, AlertCircle, X,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { getClients, activateOrder } from '@/lib/api'
+import { getClients, activateOrder, getConfig, updateConfig } from '@/lib/api'
 import { auth, db } from '@/lib/firebase'
+import { getAuth } from 'firebase/auth'
 import { TEAM_ROLES } from '@primekeys/shared'
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore'
+import { collection, onSnapshot, query, orderBy, where, doc } from 'firebase/firestore'
 import { AnimatePresence, motion } from 'framer-motion'
 
 import { ClientManagementTable, MOCK_CLIENTS } from './client-management-table'
@@ -139,20 +140,71 @@ function StatCard({ label, value, sub, icon: Icon, color }: { label: string; val
 
 // ── Overview ─────────────────────────────────────────────
 function OverviewSection({ clients, setActive }: { clients: any[]; setActive: (s: Section) => void }) {
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [monthRevenue, setMonthRevenue] = useState(0)
+  const [productCount, setProductCount] = useState(9)
+  const [orderCount, setOrderCount] = useState(0)
+
+  useEffect(() => {
+    // Live orders for activity feed + revenue
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+    const unsub = onSnapshot(q, snap => {
+      const allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setRecentOrders(allOrders.slice(0, 5))
+      setOrderCount(allOrders.length)
+
+      // Revenue from activated orders (INR)
+      const now = new Date()
+      const revenue = allOrders
+        .filter((o: any) => o.status === 'activated' && o.currency === 'INR')
+        .reduce((s: number, o: any) => s + (Number(o.total) || 0), 0)
+
+      const thisMonthRevenue = allOrders
+        .filter((o: any) => {
+          if (o.status !== 'activated' || o.currency !== 'INR') return false
+          const d = o.activatedAt?.seconds ? new Date(o.activatedAt.seconds * 1000) : new Date(o.activatedAt || 0)
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+        })
+        .reduce((s: number, o: any) => s + (Number(o.total) || 0), 0)
+
+      setMonthRevenue(thisMonthRevenue)
+    })
+
+    // Product count from catalogue
+    const catUnsub = onSnapshot(doc(db, 'catalogue', 'config'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data()
+        const count = Object.keys(data || {}).filter(k => !k.startsWith('_')).length
+        setProductCount(Math.max(count, 9))
+      }
+    })
+
+    return () => { unsub(); catUnsub() }
+  }, [])
+
   const active = clients.filter(c => c.status === 'active').length
   const expiringSoon = clients.filter(c => {
     const days = Math.ceil((new Date(c.expiryDate || c.expiry || '').getTime() - Date.now()) / 86400000)
     return days >= 0 && days <= 30 && c.status === 'active'
   }).sort((a, b) => new Date(a.expiryDate || a.expiry).getTime() - new Date(b.expiryDate || b.expiry).getTime())
 
+  const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+    pending:       { label: 'Order received',      color: '#fbbf24' },
+    utr_submitted: { label: 'UTR submitted',        color: '#60a5fa' },
+    activated:     { label: 'Credentials sent',    color: '#2dcc6e' },
+    failed:        { label: 'Payment failed',       color: '#f87171' },
+  }
+
+  const revenueDisplay = monthRevenue > 0 ? `₹${monthRevenue.toLocaleString('en-IN')}` : '₹—'
+
   return (
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f7', letterSpacing: '-0.02em', marginBottom: 24 }}>Overview</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <StatCard label="Total Clients"  value={String(clients.length)} sub="+12% this month"   icon={Users}      color="#D4AF37" />
-        <StatCard label="Active Subs"    value={String(active)}          sub="Auto-renewed"       icon={Activity}   color="#2dcc6e" />
-        <StatCard label="Est. Revenue"   value={`₹${(clients.length * 3.49).toFixed(1)}k`} sub="This period" icon={DollarSign} color="#60a5fa" />
-        <StatCard label="Products"       value="9"                        sub="All categories"    icon={Package}    color="#a78bfa" />
+        <StatCard label="Total Clients"  value={String(clients.length)} sub={clients.length > 0 ? 'In Firestore' : 'No clients yet'} icon={Users}      color="#D4AF37" />
+        <StatCard label="Active Subs"    value={String(active)}          sub={`${clients.length - active} inactive`}                  icon={Activity}   color="#2dcc6e" />
+        <StatCard label="Month Revenue"  value={revenueDisplay}          sub="From activated orders (INR)"                             icon={DollarSign} color="#60a5fa" />
+        <StatCard label="Products"       value={String(productCount)}  sub={`${orderCount} total orders`}                             icon={Package}    color="#a78bfa" />
       </div>
 
       {expiringSoon.length > 0 && (
@@ -180,24 +232,35 @@ function OverviewSection({ clients, setActive }: { clients: any[]; setActive: (s
       )}
 
       <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f5f5f7' }}>Recent Activity</h3>
+          <button onClick={() => setActive('orders')} style={{ fontSize: 11, color: '#D4AF37', background: 'none', border: 'none', cursor: 'pointer' }}>View all →</button>
         </div>
-        {[
-          { label: 'New order received',    desc: 'Netflix 3-month plan',  time: '2m ago',  color: '#2dcc6e' },
-          { label: 'Payment verified',      desc: 'UTR confirmed via UPI', time: '8m ago',  color: '#D4AF37' },
-          { label: 'Credentials delivered', desc: 'Sent to WhatsApp',      time: '15m ago', color: '#60a5fa' },
-          { label: 'New signup',            desc: 'Client registered',     time: '1h ago',  color: '#a78bfa' },
-        ].map((a, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#f5f5f7' }}>{a.label}</p>
-              <p style={{ fontSize: 11, color: '#6e6e73' }}>{a.desc}</p>
-            </div>
-            <span style={{ fontSize: 11, color: '#444' }}>{a.time}</span>
-          </div>
-        ))}
+        {recentOrders.length === 0 ? (
+          <div style={{ padding: '28px 24px', textAlign: 'center', color: '#333', fontSize: 13 }}>No orders yet — activity will appear here in real time.</div>
+        ) : (
+          recentOrders.map((o, i) => {
+            const s = STATUS_LABEL[o.status] || STATUS_LABEL.pending
+            const when = o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000) : null
+            const timeAgo = when ? (() => {
+              const diff = Date.now() - when.getTime()
+              if (diff < 60000) return `${Math.round(diff/1000)}s ago`
+              if (diff < 3600000) return `${Math.round(diff/60000)}m ago`
+              if (diff < 86400000) return `${Math.round(diff/3600000)}h ago`
+              return when.toLocaleDateString('en-IN', { day:'numeric', month:'short' })
+            })() : ''
+            return (
+              <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: i < recentOrders.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#f5f5f7' }}>{s.label}</p>
+                  <p style={{ fontSize: 11, color: '#6e6e73' }}>{o.name || 'Customer'} · {o.product} · <span style={{ color: '#D4AF37', fontWeight: 600 }}>{o.currency} {o.total}</span></p>
+                </div>
+                <span style={{ fontSize: 11, color: '#444' }}>{timeAgo}</span>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
   )
@@ -364,7 +427,74 @@ function OrdersSection() {
 }
 
 // ── Settings ─────────────────────────────────────────────
+interface ConfigState {
+  upiId:          string
+  whatsappNumber: string
+  waApiKey:       string
+  wiseLink:       string
+}
+
 function SettingsSection({ role }: { role: string | null }) {
+  const { user } = useAuth()
+  const [config, setConfig]           = useState<ConfigState>({
+    upiId:          'paytm.slfsmng@pty',
+    whatsappNumber: '+91 8111956481',
+    waApiKey:       '',
+    wiseLink:       'wise.com/pay/business/aaronjoythomas',
+  })
+  const [editing, setEditing]         = useState<string | null>(null)
+  const [editValue, setEditValue]     = useState('')
+  const [saving, setSaving]           = useState(false)
+  const [saved, setSaved]             = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    getAuth().currentUser?.getIdToken().then(token => {
+      getConfig(token).then(data => {
+        if (Object.keys(data).length > 0) {
+          setConfig({
+            upiId:          data.upiId          || 'paytm.slfsmng@pty',
+            whatsappNumber: data.whatsappNumber  || '+91 8111956481',
+            waApiKey:       data.waApiKey        || '',
+            wiseLink:       data.wiseLink        || 'wise.com/pay/business/aaronjoythomas',
+          })
+        }
+      }).catch(() => {})
+    }).catch(() => {})
+  }, [user])
+
+  const startEdit = (key: keyof ConfigState) => {
+    setEditing(key)
+    setEditValue(config[key])
+    setSaved(false)
+  }
+
+  const saveEdit = async () => {
+    if (!editing || !user) return
+    setSaving(true)
+    try {
+      const token = await getAuth().currentUser?.getIdToken()
+      if (!token) return
+      await updateConfig({ [editing]: editValue }, token)
+      setConfig(prev => ({ ...prev, [editing]: editValue }))
+      setEditing(null)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      // silent fail
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const FIELDS: { label: string; key: keyof ConfigState; editable: boolean }[] = [
+    { label: 'UPI ID',               key: 'upiId',          editable: true  },
+    { label: 'WhatsApp Number',      key: 'whatsappNumber', editable: true  },
+    { label: 'AiSensy / WA API Key', key: 'waApiKey',       editable: true  },
+    { label: 'Wise Link',            key: 'wiseLink',       editable: true  },
+    { label: 'Firebase Project',     key: 'upiId' as keyof ConfigState, editable: false },
+  ]
+
   return (
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#f5f5f7', letterSpacing: '-0.02em', marginBottom: 24 }}>Settings</h2>
@@ -376,18 +506,50 @@ function SettingsSection({ role }: { role: string | null }) {
             <p style={{ fontSize: 12, color: '#6e6e73' }}>System configuration requires Founder & CEO authentication.</p>
           </div>
         </div>
-        {[
-          { label: 'UPI ID',               value: 'paytm.slfsmng@pty',        editable: true  },
-          { label: 'WhatsApp Number',      value: '+91 8111956481',            editable: true  },
-          { label: 'AiSensy / WA API Key', value: '(not connected)',           editable: true  },
-          { label: 'Wise Link',            value: 'wise.com/pay/business/...', editable: true  },
-          { label: 'Firebase Project',     value: 'primekeys-ops (locked)',    editable: false },
-        ].map(({ label, value, editable }) => (
+        {FIELDS.map(({ label, key, editable }) => (
           <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
             <span style={{ fontSize: 13, color: '#a1a1a6' }}>{label}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 13, color: editable ? '#f5f5f7' : '#444', fontFamily: 'monospace' }}>{value}</span>
-              {editable && <button style={{ fontSize: 11, color: '#D4AF37', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {editing === key ? (
+                <>
+                  <input
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditing(null) }}
+                    autoFocus
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(212,175,55,0.3)',
+                      borderRadius: 7, color: '#f5f5f7', fontSize: 12,
+                      fontFamily: 'monospace', padding: '4px 10px', outline: 'none', width: 200,
+                    }}
+                  />
+                  <button
+                    onClick={saveEdit}
+                    disabled={saving}
+                    style={{ height: 28, padding: '0 12px', borderRadius: 7, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', color: '#4ade80', fontSize: 11, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
+                    {saving ? '…' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setEditing(null)}
+                    style={{ height: 28, padding: '0 10px', borderRadius: 7, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#555', fontSize: 11, cursor: 'pointer' }}>
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: 13, color: editable ? '#f5f5f7' : '#444', fontFamily: 'monospace' }}>
+                    {key === 'upiId' && label === 'Firebase Project' ? 'primekeys-ops (locked)' : config[key] || '(not set)'}
+                  </span>
+                  {editable && (
+                    <button
+                      onClick={() => startEdit(key)}
+                      style={{ fontSize: 11, color: saved ? '#4ade80' : '#D4AF37', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      {saved ? 'Saved ✓' : 'Edit'}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -405,6 +567,7 @@ export default function AdminDashboard() {
   const [loadingClients, setLoadingClients] = useState(true)
   const [taskBadge, setTaskBadge] = useState(0)
   const [orderBadge, setOrderBadge] = useState(0)
+  const [liveTaskStats, setLiveTaskStats] = useState<any[]>([])
 
   useEffect(() => {
     if (!canAccess(role, active)) {
@@ -441,7 +604,28 @@ export default function AdminDashboard() {
     return onSnapshot(q, snap => setOrderBadge(snap.size))
   }, [])
 
-  const taskStats = Object.keys(TEAM_ROLES).map(email => ({ email, done: 0, inProgress: 0, pending: 0, blocked: 0, overdue: 0 }))
+  // Wire real task stats per team member for PerformanceSection
+  useEffect(() => {
+    if (DEV_BYPASS) return
+    const q = query(collection(db, 'tasks'))
+    return onSnapshot(q, snap => {
+      const statsMap: Record<string, any> = {}
+      snap.docs.forEach(d => {
+        const t = d.data() as any
+        const email = t.assignedTo
+        if (!email) return
+        if (!statsMap[email]) statsMap[email] = { email, done: 0, inProgress: 0, pending: 0, blocked: 0, overdue: 0 }
+        if (t.status === 'done') statsMap[email].done++
+        else if (t.status === 'in-progress') statsMap[email].inProgress++
+        else if (t.status === 'blocked') statsMap[email].blocked++
+        else statsMap[email].pending++
+        if (t.dueDate && new Date(t.dueDate).getTime() < Date.now() && t.status !== 'done') statsMap[email].overdue++
+      })
+      setLiveTaskStats(Object.values(statsMap))
+    })
+  }, [])
+
+
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 52px)', background: '#080808' }}>
@@ -473,7 +657,7 @@ export default function AdminDashboard() {
         {active === 'tasks'       && <TaskSection currentEmail={user?.email || ''} currentRole={role} />}
         {active === 'calendar'    && <CalendarSection currentEmail={user?.email || ''} />}
         {active === 'profit'      && <ProfitSection />}
-        {active === 'performance' && <PerformanceSection taskStats={taskStats} />}
+        {active === 'performance' && <PerformanceSection taskStats={liveTaskStats} />}
         {active === 'messaging'   && <MessagingSection />}
         {active === 'maintenance' && <MaintenanceSection />}
         {active === 'catalogue'   && <CatalogueSection />}

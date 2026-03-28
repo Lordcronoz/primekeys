@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    // Team member accounts — must be signed in with Firebase Auth
+    function isTeamMember() {
+      return request.auth != null && request.auth.token.email in [
+        'aaronjthomas.cj@gmail.com',
+        'nicholsonvargheese81939@gmail.com',
+        'devikaprasannan089@gmail.com',
+        'shayanika7@gmail.com'
+      ];
+    }
+
+    // Founder & Co-Founder — can modify system config
+    function isFounder() {
+      return request.auth != null && request.auth.token.email in [
+        'aaronjthomas.cj@gmail.com',
+        'nicholsonvargheese81939@gmail.com'
+      ];
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // ── Orders ──────────────────────────────────────────────────────────────
+    // Anyone can create (checkout flow). Team reads all. No client-side deletes.
+    match /orders/{orderId} {
+      allow read:   if isTeamMember();
+      allow create: if isSignedIn()
+                    && request.resource.data.keys().hasAll(['name', 'email', 'product', 'total', 'currency'])
+                    && request.resource.data.total is number
+                    && request.resource.data.total > 0;
+      allow update: if isTeamMember();
+      allow delete: if false; // never delete via client
+    }
+
+    // ── Clients ─────────────────────────────────────────────────────────────
+    match /clients/{clientId} {
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Payments ────────────────────────────────────────────────────────────
+    match /payments/{paymentId} {
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Tasks ───────────────────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Calendar Events ──────────────────────────────────────────────────────
+    match /calendar_events/{eventId} {
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Maintenance windows ─────────────────────────────────────────────────
+    match /maintenance/{windowId} {
+      allow read:   if isSignedIn(); // customers check this too
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Tickets ─────────────────────────────────────────────────────────────
+    match /tickets/{ticketId} {
+      // Customers can read their own tickets
+      allow read:   if isSignedIn()
+                    && (isTeamMember() || resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid;
+      allow update: if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Leads ───────────────────────────────────────────────────────────────
+    match /leads/{leadId} {
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+      allow delete: if false;
+    }
+
+    // ── Catalogue / Config ─────────────────────────────────────────────────
+    match /catalogue/config {
+      // Team reads settings; founders can update them
+      allow read:   if isTeamMember();
+      allow write:  if isFounder();
+    }
+
+    match /catalogue/{subcollection}/{docId} {
+      // Handles templates, product overrides, etc.
+      allow read:   if isTeamMember();
+      allow write:  if isTeamMember();
+    }
+  }
+}

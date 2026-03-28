@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Copy, Check, MessageCircle, Bell,
   Gift, Clock, AlertOctagon, Sparkles, Star, Wrench,
 } from 'lucide-react'
 import { TEAM_ROLES } from '@primekeys/shared'
+import { getAuth } from 'firebase/auth'
+import { getTemplates, updateTemplates } from '@/lib/api'
 
 // ─── Regional Festival Calendar ───────────────────────────────────────────────
 export const FESTIVAL_CALENDAR: { name: string; regions: string[]; month: number; day: number; desc: string }[] = [
@@ -83,11 +85,39 @@ const QUICK_TEMPLATES = [
 ]
 
 export function MessagingSection() {
-  const [templates, setTemplates] = useState<Template[]>(DEFAULT_TEMPLATES)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [editBody, setEditBody] = useState('')
-  const [copied, setCopied] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'automation' | 'quick' | 'log' | 'festivals'>('automation')
+  const [templates, setTemplates]     = useState<Template[]>(DEFAULT_TEMPLATES)
+  const [editId, setEditId]         = useState<string | null>(null)
+  const [editBody, setEditBody]     = useState('')
+  const [copied, setCopied]         = useState<string | null>(null)
+  const [activeTab, setActiveTab]   = useState<'automation' | 'quick' | 'log' | 'festivals'>('automation')
+  const [saving, setSaving]         = useState(false)
+
+  useEffect(() => {
+    getAuth().currentUser?.getIdToken().then(token => {
+      getTemplates(token).then(data => {
+        if (data?.automation?.length) {
+          setTemplates(data.automation)
+        }
+      }).catch(() => {})
+    }).catch(() => {})
+  }, [])
+
+  const saveEdit = async () => {
+    if (!editId) return
+    setSaving(true)
+    try {
+      const token = await getAuth().currentUser?.getIdToken()
+      if (!token) return
+      const updated = templates.map((t: Template) => t.id === editId ? { ...t, body: editBody } : t)
+      setTemplates(updated)
+      await updateTemplates({ automation: updated }, token)
+      setEditId(null)
+    } catch {
+      // silent fail
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const messageLogs = [
     { id: 'ml1', type: 'Birthday',       client: 'Riya Sharma',       sentAt: new Date(Date.now() - 86400000 * 2).toISOString(), preview: 'Hey Riya! The whole PRIMEKEYS team...' },
@@ -99,11 +129,6 @@ export function MessagingSection() {
     navigator.clipboard.writeText(text).catch(() => {})
     setCopied(key)
     setTimeout(() => setCopied(null), 2000)
-  }
-
-  const saveEdit = () => {
-    setTemplates(prev => prev.map((t: Template) => t.id === editId ? { ...t, body: editBody } : t))
-    setEditId(null)
   }
 
   const TABS = [
@@ -181,9 +206,9 @@ export function MessagingSection() {
                           style={{ width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: 9, color: '#f5f5f7', fontSize: 12, lineHeight: 1.7, outline: 'none', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
                         />
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button onClick={saveEdit}
-                            style={{ height: 30, padding: '0 16px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                            Save Template
+                          <button onClick={saveEdit} disabled={saving}
+                            style={{ height: 30, padding: '0 16px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
+                            {saving ? 'Saving…' : 'Save Template'}
                           </button>
                           <button onClick={() => setEditId(null)}
                             style={{ height: 30, padding: '0 12px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#555', borderRadius: 7, fontSize: 11, cursor: 'pointer' }}>

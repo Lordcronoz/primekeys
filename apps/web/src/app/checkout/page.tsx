@@ -7,6 +7,17 @@ import { useCurrency } from '@/context/CurrencyContext'
 import { useAuth } from '@/context/AuthContext'
 import { createOrder, verifyUPI } from '@/lib/api'
 import Link from 'next/link'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+async function validatePromo(code: string) {
+  const res = await fetch(`${API_URL}/api/validate-promo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  })
+  return res.json() as Promise<{ valid: boolean; discount: number }>
+}
 import { CreditCard, MapPin, Tag, User, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import ProgressIndicator from '@/components/ui/progress-indicator'
@@ -91,6 +102,9 @@ function CheckoutContent() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
   const [promo, setPromo] = useState('')
+  const [promoValid, setPromoValid] = useState(false)
+  const [promoDiscount, setPromoDiscount] = useState(0)
+  const [promoLoading, setPromoLoading] = useState(false)
   const [order, setOrder] = useState<any>(null)
   const [utr, setUtr] = useState('')
   const [loading, setLoading] = useState(false)
@@ -108,10 +122,33 @@ function CheckoutContent() {
   const handleSubmitDetails = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
-      const resp = await createOrder({ name: formData.name, email: formData.email, phone: formData.phone, product: product.id, duration: months, total: pricing.total, currency: currencyCode })
+      const finalTotal = promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total
+      const resp = await createOrder({
+        name: formData.name, email: formData.email, phone: formData.phone,
+        product: product.id, duration: months, total: finalTotal, currency: currencyCode,
+        referralCode: promoValid ? promo : '',
+      })
       setOrder({ id: resp.orderId, email: formData.email }); setStep(2)
     } catch (err: any) { setError(err.message || 'Something went wrong.') }
     finally { setLoading(false) }
+  }
+
+  const handleApplyPromo = async () => {
+    if (!promo.trim()) return
+    setPromoLoading(true)
+    try {
+      const result = await validatePromo(promo.trim().toUpperCase())
+      if (result.valid) {
+        setPromoValid(true)
+        setPromoDiscount(result.discount)
+      } else {
+        setPromoValid(false)
+        setPromoDiscount(0)
+        setError('Invalid referral code. Ask a friend who uses PRIMEKEYS for their code!')
+        setTimeout(() => setError(''), 3000)
+      }
+    } catch { setError('Could not verify code — try again') }
+    finally { setPromoLoading(false) }
   }
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -186,23 +223,32 @@ function CheckoutContent() {
 
               <Divider />
 
-              <Section icon={<Tag size={16} />} label="Promo Code">
+              <Section icon={<Tag size={16} />} label="Referral Code">
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Input
-                    placeholder="Enter discount code"
+                    placeholder="Friend's referral code"
                     value={promo}
-                    onChange={e => setPromo(e.target.value)}
+                    onChange={e => { setPromo(e.target.value.toUpperCase()); setPromoValid(false) }}
+                    disabled={promoValid}
                     style={{ flex: 1 }}
                   />
-                  <button type="button" style={{
-                    padding: '0 18px', height: 44, borderRadius: 10,
-                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#a1a1a6', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                    flexShrink: 0, whiteSpace: 'nowrap',
-                  }}>
-                    Redeem
-                  </button>
+                  {promoValid ? (
+                    <div style={{ height: 44, padding: '0 14px', borderRadius: 10, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', color: '#4ade80', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      ✓ {promoDiscount}% off
+                    </div>
+                  ) : (
+                    <button type="button" onClick={handleApplyPromo} disabled={promoLoading || !promo.trim()} style={{
+                      padding: '0 18px', height: 44, borderRadius: 10,
+                      background: promoLoading ? 'rgba(212,175,55,0.2)' : 'rgba(212,175,55,0.1)',
+                      border: '1px solid rgba(212,175,55,0.3)',
+                      color: '#D4AF37', fontSize: 14, fontWeight: 600, cursor: promoLoading ? 'not-allowed' : 'pointer',
+                      flexShrink: 0, whiteSpace: 'nowrap',
+                    }}>
+                      {promoLoading ? 'Checking…' : 'Apply'}
+                    </button>
+                  )}
                 </div>
+                {!promoValid && <p style={{ fontSize: 11, color: '#555', marginTop: 6 }}>Ask a friend who's a PRIMEKEYS member for their referral code.</p>}
               </Section>
 
               <Divider />
@@ -210,14 +256,27 @@ function CheckoutContent() {
               {/* Order total */}
               <div style={{ padding: '20px 24px' }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#a1a1a6', marginBottom: 12 }}>Order Total</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 0', fontSize: 14 }}>
-                  <span style={{ color: '#6e6e73' }}>{months}-month plan</span>
-                  <span style={{ textAlign: 'right', color: '#f5f5f7', fontWeight: 600 }}>{formatPrice(pricing.total, currencyCode)}</span>
-                  <span style={{ color: '#6e6e73' }}>Delivery</span>
-                  <span style={{ textAlign: 'right', color: '#2dcc6e', fontWeight: 600 }}>Free</span>
-                  <span style={{ color: '#6e6e73' }}>Taxes</span>
-                  <span style={{ textAlign: 'right', color: '#f5f5f7', fontWeight: 600 }}>Included</span>
-                </div>
+                {(() => {
+                  const finalTotal = promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 0', fontSize: 14 }}>
+                      <span style={{ color: '#6e6e73' }}>{months}-month plan</span>
+                      <span style={{ textAlign: 'right', color: promoValid ? '#555' : '#f5f5f7', fontWeight: 600, textDecoration: promoValid ? 'line-through' : 'none' }}>{formatPrice(pricing.total, currencyCode)}</span>
+                      {promoValid && <>
+                        <span style={{ color: '#4ade80' }}>Referral discount</span>
+                        <span style={{ textAlign: 'right', color: '#4ade80', fontWeight: 600 }}>−{promoDiscount}%</span>
+                      </>}
+                      <span style={{ color: '#6e6e73' }}>Delivery</span>
+                      <span style={{ textAlign: 'right', color: '#2dcc6e', fontWeight: 600 }}>Free</span>
+                      <span style={{ color: '#6e6e73' }}>Taxes</span>
+                      <span style={{ textAlign: 'right', color: '#f5f5f7', fontWeight: 600 }}>Included</span>
+                      {promoValid && <>
+                        <span style={{ color: '#D4AF37', fontWeight: 700, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>Total</span>
+                        <span style={{ textAlign: 'right', color: '#D4AF37', fontWeight: 700, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>{formatPrice(finalTotal, currencyCode)}</span>
+                      </>}
+                    </div>
+                  )
+                })()}
               </div>
             </Card>
 
@@ -231,7 +290,7 @@ function CheckoutContent() {
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 11, color: '#6e6e73', marginBottom: 2 }}>Total today</p>
                 <p style={{ fontSize: 24, fontWeight: 800, color: '#D4AF37', letterSpacing: '-0.02em' }}>
-                  {formatPrice(pricing.total, currencyCode)}
+                  {formatPrice(promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total, currencyCode)}
                 </p>
               </div>
               <button type="submit" disabled={loading} style={{
@@ -269,7 +328,7 @@ function CheckoutContent() {
                       </div>
                     </div>
                     <p style={{ fontSize: 14, color: '#a1a1a6', textAlign: 'center' }}>
-                      Pay <strong style={{ color: '#f5f5f7' }}>{formatPrice(pricing.total, currencyCode)}</strong> to{' '}
+                      Pay <strong style={{ color: '#f5f5f7' }}>{formatPrice(promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total, currencyCode)}</strong> to{' '}
                       <span style={{ color: '#D4AF37', fontWeight: 600 }}>{UPI_ID}</span>
                     </p>
                     <div style={{ width: '100%' }}>
@@ -285,7 +344,7 @@ function CheckoutContent() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
                     <p style={{ fontSize: 14, color: '#a1a1a6' }}>
-                      Send <strong style={{ color: '#f5f5f7' }}>{formatPrice(pricing.total, currencyCode)}</strong> via Wise. Once done, click the button below.
+                      Send <strong style={{ color: '#f5f5f7' }}>{formatPrice(promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total, currencyCode)}</strong> via Wise. Once done, click the button below.
                     </p>
                     <a href={WISE_LINK} target="_blank" rel="noreferrer" style={{
                       display: 'block', padding: '12px 24px',
@@ -351,7 +410,7 @@ function CheckoutContent() {
 
                 <div style={{ width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {[
-                    { label: 'Order ID', val: order?.id || 'ORD-0001', mono: true },
+                    { label: 'Order ID', val: order?.id ? `#${order.id.slice(-8).toUpperCase()}` : 'ORD-0001', mono: true },
                     { label: 'Product', val: product.name },
                     { label: 'Status', val: 'Pending Delivery', gold: true },
                   ].map(({ label, val, mono, gold }: any) => (
@@ -368,8 +427,15 @@ function CheckoutContent() {
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 18, padding: '16px 20px',
-              display: 'flex', gap: 12,
+              display: 'flex', gap: 10,
             }}>
+              <button onClick={() => router.push(`/portal/track/${order?.id}`)} style={{
+                flex: 1, height: 48,
+                background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)',
+                color: '#D4AF37', borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}>
+                Track Order
+              </button>
               <button onClick={() => router.push('/store')} style={{
                 flex: 1, height: 48,
                 background: 'linear-gradient(135deg,#D4AF37,#C49A20)',
@@ -377,13 +443,6 @@ function CheckoutContent() {
                 fontSize: 15, fontWeight: 700, cursor: 'pointer',
               }}>
                 Continue Shopping
-              </button>
-              <button onClick={() => router.push('/')} style={{
-                flex: 1, height: 48,
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#a1a1a6', borderRadius: 12, fontSize: 15, cursor: 'pointer',
-              }}>
-                Home
               </button>
             </div>
           </div>

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, MessageCircle, RefreshCw, Ban, Copy, Check, StickyNote } from 'lucide-react'
 import { PRODUCTS } from '@primekeys/shared'
+import { db } from '@/lib/firebase'
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface ClientRecord {
@@ -192,9 +194,12 @@ export function ClientManagementTable({
     return matchSearch && matchStatus && matchTier
   })
 
-  const handleStatus = (id: string, status: ClientRecord['status']) => {
+  const handleStatus = async (id: string, status: ClientRecord['status']) => {
     setClients(prev => prev.map(c => c.id === id ? { ...c, status } : c))
     onStatusChange?.(id, status)
+    try {
+      await updateDoc(doc(db, 'clients', id), { status, updatedAt: serverTimestamp() })
+    } catch (e) { console.warn('Status update failed (may not be in Firestore):', e) }
   }
 
   const handleSaveNotes = async () => {
@@ -202,7 +207,10 @@ export function ClientManagementTable({
     setSavingNotes(true)
     setClients(prev => prev.map(c => c.id === selected.id ? { ...c, notes: editNotes } : c))
     onNotesChange?.(selected.id, editNotes)
-    setTimeout(() => { setSavingNotes(false) }, 600)
+    try {
+      await updateDoc(doc(db, 'clients', selected.id), { notes: editNotes, updatedAt: serverTimestamp() })
+    } catch (e) { console.warn('Notes update failed (may not be in Firestore):', e) }
+    finally { setSavingNotes(false) }
   }
 
   const copy = (val: string, key: string) => {

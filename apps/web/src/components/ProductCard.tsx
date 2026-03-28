@@ -26,13 +26,41 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { currencyCode } = useCurrency()
-  const { perMonth } = calcPrice(product.effectiveINR, 1, currencyCode)
-  const originalPerMonth = product.effectiveINR !== (product.customPrice ?? product.baseINR)
-    ? calcPrice(product.customPrice ?? product.baseINR, 1, currencyCode).perMonth
-    : null
-  const iconSrc = BRAND_ICONS[product.id]
+
+  // Respect per-currency admin override — if customPrices[currencyCode] exists,
+  // use it as the base (per-month price in that currency), bypassing INR conversion.
+  const customMonthlyPrice = product.customPrices?.[currencyCode]
+
+  const { perMonth } = customMonthlyPrice !== undefined
+    ? { perMonth: parseFloat((customMonthlyPrice * (1 - (product.discount || 0) / 100)).toFixed(2)) }
+    : calcPrice(product.effectiveINR, 1, currencyCode)
+
+  const originalPerMonth = (() => {
+    if ((product.discount || 0) === 0) return null
+    if (customMonthlyPrice !== undefined) return parseFloat(customMonthlyPrice.toFixed(2))
+    return calcPrice(product.customPrice ?? product.baseINR, 1, currencyCode).perMonth
+  })()
+
+  // Logo: admin-uploaded customLogo wins, then brand SVG, then initial letter
+  const iconSrc  = product.customLogo || BRAND_ICONS[product.id]
   const hasDiscount = (product.discount || 0) > 0
-  const isStockOut = product.stockOut || false
+  const isStockOut  = product.stockOut || false
+
+  const displayPrice = currencyCode === 'INR'
+    ? `₹${Math.round(perMonth)}`
+    : (() => {
+        const curr = { USD: '$', AED: 'AED ', GBP: '£', EUR: '€', AUD: 'A$', SGD: 'S$', CAD: 'C$', MYR: 'RM ', QAR: 'QAR ', SAR: 'SAR ', KWD: 'KWD ' }
+        const sym  = (curr as any)[currencyCode] || currencyCode + ' '
+        return `${sym}${parseFloat(perMonth.toFixed(2))}`
+      })()
+
+  const displayOriginal = originalPerMonth === null ? null : currencyCode === 'INR'
+    ? `₹${Math.round(originalPerMonth)}`
+    : (() => {
+        const curr = { USD: '$', AED: 'AED ', GBP: '£', EUR: '€', AUD: 'A$', SGD: 'S$', CAD: 'C$', MYR: 'RM ', QAR: 'QAR ', SAR: 'SAR ', KWD: 'KWD ' }
+        const sym  = (curr as any)[currencyCode] || currencyCode + ' '
+        return `${sym}${parseFloat(originalPerMonth.toFixed(2))}`
+      })()
 
   return (
     <Link href={`/store/${product.id}`} className="group block" style={{ textDecoration: 'none', pointerEvents: isStockOut ? 'none' : 'auto' }}>
@@ -40,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
         background: '#1d1d1f',
         borderRadius: 20, padding: 24,
         display: 'flex', flexDirection: 'column', gap: 12,
-        height: '100%', cursor: isStockOut ? 'not-allowed' : 'pointer',
+        minHeight: 200, height: '100%', cursor: isStockOut ? 'not-allowed' : 'pointer',
         transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         opacity: isStockOut ? 0.5 : 1,
         position: 'relative', overflow: 'hidden',
@@ -63,10 +91,10 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {/* Icon */}
-        <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {iconSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={iconSrc} alt={product.name} width={44} height={44} style={{ objectFit: 'contain', display: 'block' }} />
+            <img src={iconSrc} alt={product.name} width={44} height={44} style={{ objectFit: 'contain', display: 'block', width: 44, height: 44, borderRadius: 8 }} />
           ) : (
             <div style={{ width: 44, height: 44, borderRadius: 12, background: product.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 20 }}>
               {product.name[0]}
@@ -80,7 +108,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.name}
           </h3>
           <p style={{ fontSize: 13, color: '#86868b', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
-            {product.description}
+            {product.description || 'Premium shared subscription'}
           </p>
         </div>
 
@@ -90,11 +118,11 @@ export function ProductCard({ product }: ProductCardProps) {
             <p style={{ fontSize: 11, fontWeight: 600, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>From</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
               <p style={{ fontSize: 22, fontWeight: 700, color: isStockOut ? '#555' : '#f5f5f7', letterSpacing: '-0.02em', lineHeight: 1 }}>
-                {formatPrice(perMonth, currencyCode)}<span style={{ fontSize: 13, fontWeight: 400, color: '#6e6e73', marginLeft: 2 }}>/mo</span>
+                {displayPrice}<span style={{ fontSize: 13, fontWeight: 400, color: '#6e6e73', marginLeft: 2 }}>/mo</span>
               </p>
-              {originalPerMonth && !isStockOut && (
+              {displayOriginal && !isStockOut && (
                 <p style={{ fontSize: 13, color: '#555', textDecoration: 'line-through' }}>
-                  {formatPrice(originalPerMonth, currencyCode)}
+                  {displayOriginal}
                 </p>
               )}
             </div>

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { validate, upiSchema } from '../middleware/validate'
-import { getOrder, updateOrder, utrExists } from '../lib/firestore'
+import { getOrder, updateOrder, utrExists, Order } from '../lib/firestore'
 import { getPaymentConfirmedLink } from '../lib/whatsapp'
 import crypto from 'crypto'
 
@@ -24,7 +24,8 @@ router.post('/verify-upi', validate(upiSchema), async (req, res) => {
       return
     }
 
-    if ((order as any).status !== 'pending') {
+    const orderData = order as Order
+    if (orderData.status !== 'pending') {
       res.status(400).json({ message: 'Order already processed' })
       return
     }
@@ -36,9 +37,9 @@ router.post('/verify-upi', validate(upiSchema), async (req, res) => {
 
     // WA link for Aaron to confirm manually
     const waLink = getPaymentConfirmedLink({
-      phone:   (order as any).phone,
-      name:    (order as any).name,
-      product: (order as any).product,
+      phone:   orderData.phone,
+      name:    orderData.name,
+      product: orderData.product,
       orderId,
     })
     console.log('Payment WA link:', waLink)
@@ -57,15 +58,25 @@ router.post('/verify-upi', validate(upiSchema), async (req, res) => {
 router.post('/wise-webhook', async (req, res) => {
   try {
     const signature = req.headers['x-signature-sha256'] as string
-    const secret    = process.env.WISE_WEBHOOK_SECRET || ''
+    const secret    = process.env.WISE_WEBHOOK_SECRET
 
-    if (secret) {
-      const hmac     = crypto.createHmac('sha256', secret)
-      const digest   = hmac.update(JSON.stringify(req.body)).digest('hex')
-      if (signature !== digest) {
-        res.status(401).json({ message: 'Invalid signature' })
+    // Fail-safe: block in production if no secret configured
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('WISE_WEBHOOK_SECRET not configured — rejecting webhook')
+        res.status(500).json({ message: 'Webhook secret not configured' })
         return
       }
+      console.warn('Wise webhook: no secret configured, skipping signature verification')
+      res.json({ message: 'Webhook received (no verification)' })
+      return
+    }
+
+    const hmac   = crypto.createHmac('sha256', secret)
+    const digest = hmac.update(JSON.stringify(req.body)).digest('hex')
+    if (signature !== digest) {
+      res.status(401).json({ message: 'Invalid signature' })
+      return
     }
 
     const { data } = req.body

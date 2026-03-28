@@ -8,6 +8,7 @@ import { useCatalogue } from '@/hooks/useCatalogue'
 
 function CursorGlow() {
   useEffect(() => {
+    if (window.matchMedia('(pointer: coarse)').matches) return
     const glow = document.createElement('div')
     glow.id = 'pk-cursor-glow'
     document.body.appendChild(glow)

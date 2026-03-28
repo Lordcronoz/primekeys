@@ -16,8 +16,18 @@ const PORT = process.env.PORT || 3001
 
 // ── Middleware ──────────────────────────────────────────
 app.use(helmet())
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map(o => o.trim())
+
 app.use(cors({
-  origin:      process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`))
+    }
+  },
   credentials: true,
 }))
 app.use(express.json({ limit: '10kb' }))
@@ -41,7 +51,11 @@ app.use((_, res) => {
 })
 
 // ── Error handler ───────────────────────────────────────
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err.message?.startsWith('CORS:')) {
+    res.status(403).json({ message: 'Origin not allowed' })
+    return
+  }
   console.error(err.stack)
   res.status(500).json({ message: 'Internal server error' })
 })

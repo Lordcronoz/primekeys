@@ -18,15 +18,16 @@ export function validate(schema: Joi.ObjectSchema) {
 // ── Schemas ──────────────────────────────────────────────
 
 export const orderSchema = Joi.object({
-  name:     Joi.string().min(2).max(100).required(),
-  email:    Joi.string().email().required(),
-  phone:    Joi.string().min(7).max(20).required(),
-  product:  Joi.string().required(),
-  duration: Joi.number().valid(1, 3, 6, 12).required(),
-  total:    Joi.number().positive().required(),
-  currency: Joi.string().valid(
+  name:         Joi.string().min(2).max(100).required(),
+  email:        Joi.string().email().required(),
+  phone:        Joi.string().min(7).max(20).required(),
+  product:      Joi.string().required(),
+  duration:     Joi.number().valid(1, 3, 6, 12).required(),
+  total:        Joi.number().positive().required(),
+  currency:     Joi.string().valid(
     'INR','USD','AED','GBP','AUD','SGD','CAD','EUR','MYR','QAR','SAR','KWD'
   ).required(),
+  referralCode:  Joi.string().max(20).allow('').optional(),
 })
 
 export const upiSchema = Joi.object({
@@ -64,4 +65,17 @@ export const renewSchema = Joi.object({
   clientId:    Joi.string().required(),
   newExpiry:   Joi.string().isoDate().required(),
   charge:      Joi.number().min(0).required(),
+})
+
+export const paypalConfirmSchema = Joi.object({
+  paypalOrderId: Joi.string().required(),
+  name:          Joi.string().min(2).max(100).required(),
+  email:         Joi.string().email().required(),
+  phone:         Joi.string().min(7).max(20).allow('').default(''),
+  product:       Joi.string().required(),
+  duration:      Joi.number().valid(1, 3, 6, 12).required(),
+  total:         Joi.number().positive().required(),
+  currency:      Joi.string().valid(
+    'INR','USD','AED','GBP','AUD','SGD','CAD','EUR','MYR','QAR','SAR','KWD'
+  ).required(),
 })

@@ -19,41 +19,59 @@ export interface Payment {
   createdAt: number
 }
 
-const MOCK_PAYMENTS: Payment[] = [
-  { id: 'p1', clientName: 'Riya Sharma',       amount: 399,  utr: 'UPI2026031300001', service: 'netflix',  date: '2026-03-13', notes: '', createdAt: Date.now() - 86400000 },
-  { id: 'p2', clientName: 'Fatima Al-Hassan',  amount: 1299, utr: 'WISE20260311XYZ',  service: 'chatgpt', date: '2026-03-11', notes: 'Paid via Wise', createdAt: Date.now() - 259200000 },
-  { id: 'p3', clientName: 'Aditya Menon',      amount: 249,  utr: 'UPI2026030800045', service: 'spotify', date: '2026-03-08', notes: '', createdAt: Date.now() - 432000000 },
-  { id: 'p4', clientName: 'Karan Nair',        amount: 149,  utr: 'UPI2026030200033', service: 'youtube', date: '2026-03-02', notes: '', createdAt: Date.now() - 950400000 },
-  { id: 'p5', clientName: 'Sarah Mitchell',    amount: 899,  utr: 'WISE20260228ABC',  service: 'canva',   date: '2026-02-28', notes: 'USD payment converted', createdAt: Date.now() - 1296000000 },
-  { id: 'p6', clientName: 'Arjun Pillai',      amount: 399,  utr: 'UPI2026022500088', service: 'netflix', date: '2026-02-25', notes: '', createdAt: Date.now() - 1555200000 },
-]
-
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 export function ProfitSection() {
-  const [payments, setPayments] = useState<Payment[]>(MOCK_PAYMENTS)
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [orders, setOrders] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ clientName: '', amount: '', utr: '', service: 'netflix', date: new Date().toISOString().split('T')[0], notes: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (DEV_BYPASS) return
-    const q = query(collection(db, 'payments'), orderBy('createdAt', 'desc'))
-    return onSnapshot(q, snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment))))
+    // Live payments from payments collection (written when orders are activated)
+    const pq = query(collection(db, 'payments'), orderBy('createdAt', 'desc'))
+    const unsubPayments = onSnapshot(pq, snap => {
+      const paymentData = snap.docs.map(d => ({ id: d.id, ...d.data() } as Payment))
+      setPayments(paymentData)
+    })
+
+    // Also watch activated orders as source of truth
+    const oq = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+    const unsubOrders = onSnapshot(oq, snap => {
+      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+
+    return () => { unsubPayments(); unsubOrders() }
   }, [])
 
   const now = new Date()
-  const thisMonth = payments.filter(p => { const d = new Date(p.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
-  const thisWeek  = payments.filter(p => (Date.now() - new Date(p.date).getTime()) < 7 * 86400000)
-  const today     = payments.filter(p => { const d = new Date(p.date); return d.toDateString() === now.toDateString() })
-  const total     = payments.reduce((s, p) => s + p.amount, 0)
-  const monthTotal = thisMonth.reduce((s, p) => s + p.amount, 0)
+  const activatedOrders = orders.filter(o => o.status === 'activated')
 
-  // Bar chart: last 6 months
+  // Revenue from activated orders (INR only for local currency display)
+  const total     = activatedOrders.filter(o => o.currency === 'INR').reduce((s, o) => s + (Number(o.total) || 0), 0)
+  const thisMonth = activatedOrders.filter(o => {
+    const d = o.activatedAt?.seconds ? new Date(o.activatedAt.seconds * 1000) : new Date(o.activatedAt)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  })
+  const thisWeek  = activatedOrders.filter(o => {
+    const d = o.activatedAt?.seconds ? new Date(o.activatedAt.seconds * 1000) : new Date(o.activatedAt)
+    return (Date.now() - d.getTime()) < 7 * 86400000
+  })
+  const today     = activatedOrders.filter(o => {
+    const d = o.activatedAt?.seconds ? new Date(o.activatedAt.seconds * 1000) : new Date(o.activatedAt)
+    return d.toDateString() === now.toDateString()
+  })
+  const monthTotal = thisMonth.reduce((s, o) => s + (Number(o.total) || 0), 0)
+
+  // Bar chart: last 6 months from activated orders
   const months6 = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
-    const monthPayments = payments.filter(p => { const pd = new Date(p.date); return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear() })
-    return { label: MONTHS_SHORT[d.getMonth()], total: monthPayments.reduce((s, p) => s + p.amount, 0) }
+    const monthOrders = activatedOrders.filter(o => {
+      const od = o.activatedAt?.seconds ? new Date(o.activatedAt.seconds * 1000) : new Date(o.activatedAt || 0)
+      return od.getMonth() === d.getMonth() && od.getFullYear() === d.getFullYear()
+    })
+    return { label: MONTHS_SHORT[d.getMonth()], total: monthOrders.reduce((s, o) => s + (Number(o.total) || 0), 0) }
   })
   const maxBar = Math.max(...months6.map(m => m.total), 1)
 
@@ -131,30 +149,39 @@ export function ProfitSection() {
         </div>
       </div>
 
-      {/* Payment log */}
+      {/* Payment log — shows activated orders + manually logged payments */}
       <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#f5f5f7' }}>All Payments</span>
-          <span style={{ fontSize: 12, color: '#555' }}>{payments.length} records</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#f5f5f7' }}>Revenue Log</span>
+          <span style={{ fontSize: 12, color: '#555' }}>{activatedOrders.length} completed order{activatedOrders.length !== 1 ? 's' : ''}</span>
         </div>
-        {payments.map((p, i) => {
-          const prod = PRODUCTS.find(pr => pr.id === p.service)
-          return (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px', borderBottom: i < payments.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: `${prod?.color || '#333'}22`, border: `1px solid ${prod?.color || '#333'}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: prod?.color || '#555', flexShrink: 0 }}>
-                {prod?.name.charAt(0) || '?'}
+        {activatedOrders.length === 0 ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center', color: '#333', fontSize: 13 }}>
+            No completed orders yet. Orders appear here when you activate them from the Orders tab.
+          </div>
+        ) : (
+          activatedOrders.map((order, i) => {
+            const prod = PRODUCTS.find(pr => pr.id === order.product)
+            const date = order.activatedAt?.seconds
+              ? new Date(order.activatedAt.seconds * 1000)
+              : new Date(order.activatedAt || Date.now())
+            return (
+              <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px', borderBottom: i < activatedOrders.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${prod?.color || '#D4AF37'}22`, border: `1px solid ${prod?.color || '#D4AF37'}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: prod?.color || '#D4AF37', flexShrink: 0 }}>
+                  {prod?.name.charAt(0) || '?'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#f5f5f7' }}>{order.name}</p>
+                  <p style={{ fontSize: 10, color: '#555', fontFamily: 'monospace' }}>#{order.id.slice(-8).toUpperCase()}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#D4AF37' }}>{order.currency} {(Number(order.total) || 0).toLocaleString('en-IN')}</p>
+                  <p style={{ fontSize: 10, color: '#444' }}>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#f5f5f7' }}>{p.clientName}</p>
-                <p style={{ fontSize: 10, color: '#555', fontFamily: 'monospace' }}>{p.utr}</p>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#D4AF37' }}>₹{p.amount.toLocaleString('en-IN')}</p>
-                <p style={{ fontSize: 10, color: '#444' }}>{new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-              </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
     </div>
   )

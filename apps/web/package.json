@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@firebase/app-check": "^0.8.8",
     "@paypal/react-paypal-js": "^9.1.0",
     "@primekeys/shared": "workspace:*",
     "@primekeys/ui": "workspace:*",

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { updateProfile } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
@@ -364,15 +364,12 @@ export default function ClientPortal() {
   useEffect(() => {
     if (DEV_BYPASS) { setTimeout(() => { setSubs(MOCK_SUBS); setIsLoadingSubs(false) }, 700); return }
     if (!user) return
-    const fetch = async () => {
-      try {
-        const q = query(collection(db, 'clients'), where('email', '==', user.email))
-        const snap = await getDocs(q)
-        setSubs(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-      } catch (err) { console.error(err) }
-      finally { setIsLoadingSubs(false) }
-    }
-    fetch()
+    const q = query(collection(db, 'clients'), where('email', '==', user.email))
+    const unsub = onSnapshot(q, snap => {
+      setSubs(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setIsLoadingSubs(false)
+    }, err => { console.error(err); setIsLoadingSubs(false) })
+    return () => unsub()
   }, [user])
 
   if (loading || (!user && !loading)) {

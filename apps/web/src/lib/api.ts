@@ -98,4 +98,32 @@ export async function confirmPayPalOrder(payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export async function getConfig(idToken: string) {
+  return request('/api/config', {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+}
+
+export async function updateConfig(payload: Record<string, string>, idToken: string) {
+  return request('/api/config', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getTemplates(idToken: string) {
+  return request('/api/templates', {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+}
+
+export async function updateTemplates(payload: Record<string, any>, idToken: string) {
+  return request('/api/templates', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(payload),
+  })
 }

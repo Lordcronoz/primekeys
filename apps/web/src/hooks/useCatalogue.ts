@@ -15,6 +15,9 @@ export type CatalogueProduct = typeof PRODUCTS[0] & {
   bulkDiscount?: number
   bulkMinMonths?: number
   isCustom?: boolean
+  customPrices?: Record<string, number>   // per-currency admin overrides
+  customLogo?: string                       // base64 or URL admin-uploaded logo
+  stockOutDurations?: string[]              // e.g. ['1 Month', '3 Months']
 }
 
 let cachedProducts: CatalogueProduct[] | null = null
@@ -24,11 +27,18 @@ let unsubscribe: (() => void) | null = null
 function merge(data: Record<string, any>): CatalogueProduct[] {
   // Base products from shared package
   const base: CatalogueProduct[] = PRODUCTS.map(p => {
-    const override = data[p.id] || {}
-    const basePrice = override.customPrice ?? p.baseINR
-    const discount = override.discount ?? 0
+    const override     = data[p.id] || {}
+    const basePrice    = override.customPrice ?? p.baseINR
+    const discount     = override.discount ?? 0
     const effectiveINR = Math.round(basePrice * (1 - discount / 100))
-    return { ...p, ...override, effectiveINR }
+    return {
+      ...p,
+      ...override,
+      effectiveINR,
+      customPrices:      override.customPrices      ?? undefined,
+      customLogo:        override.customLogo        ?? undefined,
+      stockOutDurations: override.stockOutDurations ?? undefined,
+    }
   })
 
   // Custom products added via admin
@@ -38,13 +48,16 @@ function merge(data: Record<string, any>): CatalogueProduct[] {
       id, name: v.name, category: v.category, baseINR: v.basePrice,
       badge: null, description: v.name, tags: [], features: [], color: '#D4AF37',
       isCustom: true,
-      discount: v.discount ?? 0,
-      stockOut: v.stockOut ?? false,
-      customPrice: v.customPrice ?? null,
-      featured: v.featured ?? false,
-      flashSaleEnd: v.flashSaleEnd ?? null,
-      bulkDiscount: v.bulkDiscount ?? 0,
-      bulkMinMonths: v.bulkMinMonths ?? 3,
+      discount:          v.discount          ?? 0,
+      stockOut:          v.stockOut          ?? false,
+      customPrice:       v.customPrice       ?? null,
+      featured:          v.featured          ?? false,
+      flashSaleEnd:      v.flashSaleEnd      ?? null,
+      bulkDiscount:      v.bulkDiscount      ?? 0,
+      bulkMinMonths:     v.bulkMinMonths     ?? 3,
+      customPrices:      v.customPrices      ?? undefined,
+      customLogo:        v.customLogo        ?? undefined,
+      stockOutDurations: v.stockOutDurations ?? undefined,
       effectiveINR: Math.round((v.customPrice ?? v.basePrice) * (1 - (v.discount ?? 0) / 100)),
     }))
 
@@ -55,7 +68,7 @@ function startListener() {
   if (unsubscribe) return
   const ref = doc(db, 'catalogue', 'config')
   unsubscribe = onSnapshot(ref, snap => {
-    const data = snap.exists() ? snap.data() : {}
+    const data     = snap.exists() ? snap.data() : {}
     cachedProducts = merge(data)
     listeners.forEach(fn => fn(cachedProducts!))
   }, () => {

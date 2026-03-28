@@ -2,6 +2,8 @@ import { Router }  from 'express'
 import { createOrder }                            from '../lib/firestore'
 import { sendOrderConfirmation, sendNewOrderAlert } from '../lib/resend'
 import { getWhatsAppAlertLink }                   from '../lib/whatsapp'
+import { verifyPrice }                            from '../lib/pricing'
+import { validate, paypalConfirmSchema }          from '../middleware/validate'
 
 const router = Router()
 
@@ -46,7 +48,7 @@ async function verifyPayPalCapture(orderId: string, token: string): Promise<{ st
 }
 
 // ── POST /api/paypal-confirm ───────────────────────────────
-router.post('/paypal-confirm', async (req, res) => {
+router.post('/paypal-confirm', validate(paypalConfirmSchema), async (req, res) => {
   try {
     const {
       paypalOrderId,
@@ -59,19 +61,31 @@ router.post('/paypal-confirm', async (req, res) => {
       currency,
     } = req.body
 
-    if (!paypalOrderId || !email || !product) {
-      res.status(400).json({ message: 'Missing required fields' })
+    // ── 1. Server-side price verification ─────────────────
+    const durationNum = Number(duration)
+    if (!verifyPrice(product, durationNum, currency, Number(total))) {
+      const { expectedTotal } = await import('../lib/pricing').then(m =>
+        m.calcServerPrice(product, durationNum, currency)
+      )
+      console.warn('Price mismatch on PayPal order:', {
+        product, duration: durationNum, currency,
+        submitted: total, expected: expectedTotal,
+      })
+      res.status(400).json({
+        message:      'Price mismatch — please refresh and try again',
+        expectedTotal: expectedTotal,
+        currency,
+      })
       return
     }
 
-    // ── 1. Verify the capture with PayPal ─────────────────
+    // ── 2. Verify the capture with PayPal ─────────────────
     let verified = { status: 'UNVERIFIED', amount: '0', currency: currency || 'USD' }
     try {
       const token = await getPayPalAccessToken()
       verified    = await verifyPayPalCapture(paypalOrderId, token)
     } catch (verifyErr) {
       console.error('PayPal verification error:', verifyErr)
-      // If credentials not set yet, skip verification in dev — block in prod
       if (process.env.NODE_ENV === 'production') {
         res.status(500).json({ message: 'Could not verify payment with PayPal' })
         return
@@ -84,50 +98,51 @@ router.post('/paypal-confirm', async (req, res) => {
       return
     }
 
-    // ── 2. Create order in Firestore ───────────────────────
+    // ── 3. Create order in Firestore ───────────────────────
     const orderId = await createOrder({
-      name:          name || 'PayPal Customer',
+      name:          name,
       email,
       phone:         phone || '',
       product,
-      duration:      Number(duration) || 1,
+      duration:      durationNum,
       total:         Number(total),
       currency,
       paypalOrderId,
       paymentMethod: 'paypal',
-      status:        'utr_submitted', // payment already confirmed by PayPal
+      status:        'utr_submitted',
     })
 
-    // ── 3. Send invoice email (PayPal-specific section) ────
+    // ── 4. Send invoice email (PayPal-specific section) ────
     await sendOrderConfirmation({
       to:            email,
-      name:          name || 'Valued Customer',
+      name,
       orderId,
       product,
-      duration:      Number(duration) || 1,
+      duration:      durationNum,
       total:         Number(total),
       currency,
       paymentMethod: 'paypal',
       paypalOrderId,
     })
 
-    // ── 4. Admin alert ─────────────────────────────────────
+    // ── 5. Admin alert ─────────────────────────────────────
     await sendNewOrderAlert({
       orderId,
-      name:     name || 'PayPal Customer',
+      name,
       email,
-      phone:    phone || 'N/A',
+      phone:         phone || 'N/A',
       product,
-      duration: Number(duration) || 1,
-      total:    Number(total),
+      duration:      durationNum,
+      total:         Number(total),
       currency,
+      paymentMethod: 'paypal',
     })
 
-    // ── 5. WA alert link ───────────────────────────────────
+    // ── 6. WA alert link ───────────────────────────────────
     const waLink = getWhatsAppAlertLink({
-      name:     name || 'PayPal Customer',
+      name,
       product,
-      duration: Number(duration) || 1,
+      duration: durationNum,
       total:    Number(total),
       currency,
       orderId,

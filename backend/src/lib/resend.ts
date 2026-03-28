@@ -5,7 +5,8 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM = 'PRIMEKEYS <noreply@primekeys.in>'
+const FROM        = 'PRIMEKEYS <noreply@primekeys.in>'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@primekeys.app'
 
 // ── Helpers ───────────────────────────────────────────────
 function invoiceDate(): string {
@@ -18,14 +19,14 @@ function invoiceNumber(orderId: string): string {
 
 // ── Invoice / Order confirmation to customer ─────────────
 export async function sendOrderConfirmation(data: {
-  to:            string
-  name:          string
-  orderId:       string
-  product:       string
-  duration:      number
-  total:         number
-  currency:      string
-  paymentMethod?: string   // 'paypal' | 'upi' | 'wise' | undefined
+  to:             string
+  name:           string
+  orderId:        string
+  product:        string
+  duration:       number
+  total:          number
+  currency:       string
+  paymentMethod?: string
   paypalOrderId?: string
 }) {
   const isINR    = data.currency === 'INR'
@@ -34,16 +35,11 @@ export async function sendOrderConfirmation(data: {
   const paymentSection = isPayPal
     ? `
       <div style="background:#0a0a0a;border:1px solid rgba(38,194,129,0.25);border-radius:12px;padding:20px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <div style="width:28px;height:28px;border-radius:50%;background:rgba(38,194,129,0.12);display:flex;align-items:center;justify-content:center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#26C281" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <p style="font-size:13px;font-weight:700;color:#26C281;margin:0">Payment Received via PayPal</p>
-        </div>
+        <p style="font-size:13px;font-weight:700;color:#26C281;margin:0 0 10px">Payment Received via PayPal</p>
         <p style="font-size:13px;color:#aaa;margin:0 0 6px">Amount: <strong style="color:#D4AF37">${data.currency} ${data.total}</strong></p>
-        ${data.paypalOrderId ? `<p style="font-size:11px;color:#555;margin:0">PayPal Order ID: <span style="font-family:monospace;color:#888">${data.paypalOrderId}</span></p>` : ''}
+        ${data.paypalOrderId ? `<p style="font-size:11px;color:#555;margin:0">PayPal ID: <span style="font-family:monospace;color:#888">${data.paypalOrderId}</span></p>` : ''}
       </div>
-      <p style="font-size:12px;color:#555;margin:0 0 20px">Your credentials will be delivered to your WhatsApp within 5 minutes. If you face any issues, contact us below.</p>
+      <p style="font-size:12px;color:#555;margin:0 0 20px">Your credentials will be delivered to your WhatsApp within 5 minutes.</p>
       <a href="https://wa.me/918111956481" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;font-size:14px;margin-bottom:8px">WhatsApp Support</a>
     `
     : isINR
@@ -51,8 +47,8 @@ export async function sendOrderConfirmation(data: {
       <div style="background:#0a0a0a;border:1px solid rgba(212,175,55,0.25);border-radius:12px;padding:20px;margin-bottom:20px">
         <p style="font-size:13px;font-weight:700;color:#D4AF37;margin:0 0 12px">Pay via UPI</p>
         <p style="font-size:13px;color:#aaa;margin:0 0 6px">UPI ID: <strong style="color:#fff;font-family:monospace">paytm.slfsmng@pty</strong></p>
-        <p style="font-size:13px;color:#aaa;margin:0 0 14px">Amount: <strong style="color:#D4AF37">₹${data.total}</strong></p>
-        <p style="font-size:12px;color:#666;margin:0">After paying, send your UTR / payment screenshot to our WhatsApp for instant verification.</p>
+        <p style="font-size:13px;color:#aaa;margin:0 0 14px">Amount: <strong style="color:#D4AF37">&#8377;${data.total}</strong></p>
+        <p style="font-size:12px;color:#666;margin:0">After paying, send your UTR to our WhatsApp for instant verification.</p>
       </div>
       <a href="https://wa.me/918111956481" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;font-size:14px;margin-bottom:8px">Send UTR on WhatsApp</a>
     `
@@ -60,25 +56,23 @@ export async function sendOrderConfirmation(data: {
       <div style="background:#0a0a0a;border:1px solid rgba(212,175,55,0.25);border-radius:12px;padding:20px;margin-bottom:20px">
         <p style="font-size:13px;font-weight:700;color:#D4AF37;margin:0 0 12px">Pay via Wise (International)</p>
         <p style="font-size:13px;color:#aaa;margin:0 0 6px">Amount: <strong style="color:#D4AF37">${data.currency} ${data.total}</strong></p>
-        <p style="font-size:12px;color:#666;margin:0 0 14px">Click the button below to open our Wise payment page and complete the transfer.</p>
+        <p style="font-size:12px;color:#666;margin:0 0 14px">Click Pay on Wise below and complete the transfer.</p>
         <a href="https://wise.com/pay/business/aaronjoythomas?utm_source=invoice" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:10px 22px;border-radius:8px;text-decoration:none;font-size:13px">Pay on Wise</a>
       </div>
-      <p style="font-size:12px;color:#555;margin:0 0 20px">After paying, send a screenshot to our WhatsApp for faster processing.</p>
+      <p style="font-size:12px;color:#555;margin:0 0 20px">After paying, send a screenshot to our WhatsApp.</p>
       <a href="https://wa.me/918111956481" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:12px 28px;border-radius:999px;text-decoration:none;font-size:14px;margin-bottom:8px">WhatsApp Confirmation</a>
     `
 
   await resend.emails.send({
     from:    FROM,
     to:      data.to,
-    subject: `Invoice #${invoiceNumber(data.orderId)} — ${data.product} | PRIMEKEYS`,
+    subject: `Invoice #${invoiceNumber(data.orderId)} \u2014 ${data.product} | PRIMEKEYS`,
     html: `
       <div style="font-family:Inter,sans-serif;background:#050505;color:#f0f0f0;padding:0;max-width:560px;margin:0 auto">
-
-        <!-- Header -->
         <div style="background:linear-gradient(135deg,#0d0d0d,#111);padding:32px 40px 28px;border-bottom:1px solid rgba(212,175,55,0.2)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
-              <span style="font-size:24px;font-weight:800;color:#D4AF37;letter-spacing:-0.02em">PRIME</span><span style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.02em">KEYS</span>
+              <span style="font-size:24px;font-weight:800;color:#D4AF37">PRIME</span><span style="font-size:24px;font-weight:800;color:#fff">KEYS</span>
               <p style="font-size:11px;color:#555;margin:4px 0 0;letter-spacing:0.08em;text-transform:uppercase">Premium Subscriptions</p>
             </div>
             <div style="text-align:right">
@@ -87,11 +81,7 @@ export async function sendOrderConfirmation(data: {
             </div>
           </div>
         </div>
-
-        <!-- Body -->
         <div style="padding:32px 40px">
-
-          <!-- Bill to / dates -->
           <div style="display:flex;justify-content:space-between;margin-bottom:28px">
             <div>
               <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#555;margin:0 0 6px">Bill To</p>
@@ -104,8 +94,6 @@ export async function sendOrderConfirmation(data: {
               <p style="font-size:10px;color:#555;margin:3px 0 0">Due on receipt</p>
             </div>
           </div>
-
-          <!-- Line items table -->
           <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
             <thead>
               <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
@@ -116,7 +104,7 @@ export async function sendOrderConfirmation(data: {
             </thead>
             <tbody>
               <tr>
-                <td style="padding:14px 0 14px;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <td style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
                   <p style="font-size:14px;font-weight:600;color:#f5f5f7;margin:0">${data.product}</p>
                   <p style="font-size:11px;color:#666;margin:3px 0 0">Shared Premium Subscription</p>
                 </td>
@@ -128,36 +116,24 @@ export async function sendOrderConfirmation(data: {
                 </td>
               </tr>
               <tr>
-                <td style="padding:8px 0" colspan="2">
-                  <span style="font-size:12px;color:#666">Delivery (Digital)</span>
-                </td>
-                <td style="padding:8px 0;text-align:right">
-                  <span style="font-size:12px;color:#2dcc6e;font-weight:600">Free</span>
-                </td>
+                <td style="padding:8px 0" colspan="2"><span style="font-size:12px;color:#666">Delivery (Digital)</span></td>
+                <td style="padding:8px 0;text-align:right"><span style="font-size:12px;color:#2dcc6e;font-weight:600">Free</span></td>
               </tr>
             </tbody>
           </table>
-
-          <!-- Total box -->
           <div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:16px 20px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:14px;color:#a1a1a6;font-weight:600">Total Due</span>
             <span style="font-size:22px;font-weight:800;color:#D4AF37;letter-spacing:-0.02em">${data.currency} ${data.total}</span>
           </div>
-
-          <!-- Payment instructions -->
           <p style="font-size:12px;font-weight:700;color:#555;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px">Payment Instructions</p>
           ${paymentSection}
-
-          <!-- Footer note -->
           <div style="border-top:1px solid rgba(255,255,255,0.05);padding-top:20px;margin-top:28px">
             <p style="font-size:11px;color:#444;margin:0 0 4px">Credentials are delivered within 5 minutes of payment confirmation.</p>
             <p style="font-size:11px;color:#444;margin:0">Need help? WhatsApp <a href="https://wa.me/918111956481" style="color:#D4AF37;text-decoration:none">+91 81119 56481</a></p>
           </div>
         </div>
-
-        <!-- Footer bar -->
         <div style="background:#0d0d0d;padding:16px 40px;border-top:1px solid rgba(255,255,255,0.05);text-align:center">
-          <p style="font-size:10px;color:#444;margin:0">PRIMEKEYS — Seraph Group of Companies · primekeys.in</p>
+          <p style="font-size:10px;color:#444;margin:0">PRIMEKEYS \u2014 Seraph Group of Companies \u00b7 primekeys.in</p>
         </div>
       </div>
     `,
@@ -174,7 +150,7 @@ export async function sendCredentials(data: {
   await resend.emails.send({
     from:    FROM,
     to:      data.to,
-    subject: `Your ${data.product} credentials are ready — PRIMEKEYS`,
+    subject: `Your ${data.product} credentials are ready \u2014 PRIMEKEYS`,
     html: `
       <div style="font-family:Inter,sans-serif;background:#000;color:#f0f0f0;padding:40px;max-width:520px;margin:0 auto;border-radius:16px;border:1px solid rgba(212,175,55,0.2)">
         <div style="margin-bottom:32px">
@@ -187,43 +163,150 @@ ${data.credentials}
         </div>
         <p style="color:#999;font-size:14px">Need help setting it up? WhatsApp us anytime.</p>
         <a href="https://wa.me/918111956481" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:12px 24px;border-radius:999px;text-decoration:none;font-size:14px;margin-top:16px">WhatsApp Support</a>
-        <p style="color:#555;font-size:12px;margin-top:32px">Thank you for choosing PRIMEKEYS — Seraph Group of Companies</p>
+        <p style="color:#555;font-size:12px;margin-top:32px">Thank you for choosing PRIMEKEYS \u2014 Seraph Group of Companies</p>
       </div>
     `,
   })
 }
 
-// ── New order alert to Aaron ─────────────────────────────
-export async function sendNewOrderAlert(data: {
-  orderId:  string
-  name:     string
-  email:    string
-  phone:    string
-  product:  string
-  duration: number
-  total:    number
-  currency: string
+// ── Credentials sent alert to admin ───────────────────
+export async function sendCredentialsAlert(data: {
+  orderId: string
+  name: string
+  email: string
+  phone: string
+  product: string
+  credentials: string
 }) {
   await resend.emails.send({
     from:    FROM,
-    to:      'aaronjthomas.cj@gmail.com',
-    subject: `New Order — ${data.product} — ${data.currency} ${data.total}`,
+    to:      ADMIN_EMAIL,
+    subject: `[CREDENTIALS SENT] ${data.product} — ${data.name} — #${data.orderId.slice(-8).toUpperCase()}`,
     html: `
-      <div style="font-family:Inter,sans-serif;background:#000;color:#f0f0f0;padding:40px;max-width:520px;margin:0 auto;border-radius:16px;border:1px solid rgba(212,175,55,0.2)">
-        <h2 style="color:#D4AF37;margin-bottom:24px">New Order Received</h2>
-        <div style="background:#111;border-radius:12px;padding:20px;border:1px solid #222">
-          <div style="margin-bottom:10px"><span style="color:#666">Order ID: </span><span style="font-family:monospace;color:#D4AF37">#${data.orderId.slice(-8).toUpperCase()}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Name: </span><span>${data.name}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Email: </span><span>${data.email}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Phone: </span><span>${data.phone}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Product: </span><span>${data.product}</span></div>
-          <div style="margin-bottom:10px"><span style="color:#666">Duration: </span><span>${data.duration} month${data.duration > 1 ? 's' : ''}</span></div>
-          <div style="border-top:1px solid #222;padding-top:10px;margin-top:4px"><span style="color:#666">Total: </span><span style="font-weight:700;color:#D4AF37">${data.currency} ${data.total}</span></div>
+      <div style="font-family:Inter,sans-serif;background:#050505;color:#f0f0f0;padding:0;max-width:560px;margin:0 auto">
+        <div style="background:linear-gradient(135deg,#0d0d0d,#101010);padding:28px 36px 24px;border-bottom:1px solid rgba(212,175,55,0.18)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <span style="font-size:20px;font-weight:800;color:#D4AF37">PRIME</span><span style="font-size:20px;font-weight:800;color:#fff">KEYS</span>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;letter-spacing:0.1em;text-transform:uppercase">Credentials Dispatched</p>
+            </div>
+            <div style="display:inline-block;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:6px 14px">
+              <p style="font-size:12px;font-weight:700;color:#4ade80;margin:0">CREDENTIALS SENT ✓</p>
+            </div>
+          </div>
         </div>
-        <a href="https://wa.me/${data.phone.replace(/\D/g, '')}" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:12px 24px;border-radius:999px;text-decoration:none;font-size:14px;margin-top:24px">WhatsApp Customer</a>
+        <div style="padding:28px 36px">
+          <div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+            <p style="font-size:11px;font-weight:700;color:#D4AF37;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 14px">Order #${data.orderId.slice(-8).toUpperCase()}</p>
+            ${[
+              { label: 'Customer', value: data.name },
+              { label: 'Email',   value: data.email },
+              { label: 'Phone',   value: data.phone || 'N/A' },
+              { label: 'Product', value: data.product },
+            ].map(r => `
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+                <span style="font-size:12px;color:#555">${r.label}</span>
+                <span style="font-size:12px;color:#f5f5f7;font-weight:600">${r.value}</span>
+              </div>`).join('')}
+          </div>
+          <div style="background:rgba(248,113,113,0.05);border:1px solid rgba(248,113,113,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+            <p style="font-size:11px;font-weight:700;color:#f87171;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 10px">Credentials Dispatched</p>
+            <pre style="font-family:monospace;font-size:13px;color:#f87171;background:#0a0a0a;border-radius:8px;padding:14px;margin:0;white-space:pre-wrap;line-height:1.6">${data.credentials}</pre>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            ${data.phone ? `<a href="https://wa.me/${data.phone.replace(/\D/g, '')}" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;font-size:13px">WhatsApp Customer</a>` : ''}
+            <a href="https://primekeys.vercel.app/portal/admin" style="display:inline-block;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.35);color:#D4AF37;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;font-size:13px">Open Admin Panel</a>
+          </div>
+        </div>
+        <div style="background:#0a0a0a;padding:14px 36px;border-top:1px solid rgba(255,255,255,0.05);text-align:center">
+          <p style="font-size:10px;color:#333;margin:0">PRIMEKEYS \u00b7 admin@primekeys.app \u00b7 Automated admin alert</p>
+        </div>
       </div>
     `,
   })
 }
 
-
+// ── New order alert to admin ─────────────────────────────
+export async function sendNewOrderAlert(data: {
+  orderId:        string
+  name:           string
+  email:          string
+  phone:          string
+  product:        string
+  duration:       number
+  total:          number
+  currency:       string
+  paymentMethod?: string
+}) {
+  const isPayPal    = data.paymentMethod === 'paypal'
+  const isINR       = data.currency === 'INR'
+  const methodLabel = isPayPal ? 'PayPal' : isINR ? 'UPI' : 'Wise'
+  const methodColor = isPayPal ? '#009cde' : isINR ? '#D4AF37' : '#6dbe47'
+
+  const rows = [
+    { label: 'Name',     value: data.name                                            },
+    { label: 'Email',    value: data.email                                           },
+    { label: 'Phone',    value: data.phone || 'N/A'                                  },
+    { label: 'Product',  value: data.product                                         },
+    { label: 'Duration', value: `${data.duration} month${data.duration > 1 ? 's' : ''}` },
+  ].map(r => `
+    <div style="display:flex;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <span style="font-size:12px;color:#555">${r.label}</span>
+      <span style="font-size:12px;color:#f5f5f7;font-weight:600">${r.value}</span>
+    </div>`).join('')
+
+  const waHref = (data.phone || '').replace(/\D/g, '')
+
+  await resend.emails.send({
+    from:    FROM,
+    to:      ADMIN_EMAIL,
+    subject: `New Order \u2014 ${data.product} \u2014 ${data.currency} ${data.total} [#${data.orderId.slice(-8).toUpperCase()}]`,
+    html: `
+      <div style="font-family:Inter,sans-serif;background:#050505;color:#f0f0f0;padding:0;max-width:580px;margin:0 auto">
+        <div style="background:linear-gradient(135deg,#0d0d0d,#101010);padding:28px 36px 24px;border-bottom:1px solid rgba(212,175,55,0.18)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <span style="font-size:20px;font-weight:800;color:#D4AF37">PRIME</span><span style="font-size:20px;font-weight:800;color:#fff">KEYS</span>
+              <p style="font-size:10px;color:#555;margin:3px 0 0;letter-spacing:0.1em;text-transform:uppercase">Admin Alert</p>
+            </div>
+            <div style="text-align:right">
+              <div style="display:inline-block;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:6px 14px">
+                <p style="font-size:12px;font-weight:700;color:#4ade80;margin:0">NEW ORDER RECEIVED</p>
+              </div>
+              <p style="font-size:10px;color:#444;margin:6px 0 0">${new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+        </div>
+        <div style="padding:28px 36px">
+          <div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap">
+            <div style="flex:1;min-width:100px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px">
+              <p style="font-size:9px;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 4px">Order ID</p>
+              <p style="font-size:14px;font-weight:700;color:#D4AF37;font-family:monospace;margin:0">#${data.orderId.slice(-8).toUpperCase()}</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid ${methodColor}44;border-radius:10px;padding:12px 16px">
+              <p style="font-size:9px;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 4px">Payment</p>
+              <p style="font-size:14px;font-weight:700;color:${methodColor};margin:0">${methodLabel}</p>
+            </div>
+            <div style="background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:12px 16px">
+              <p style="font-size:9px;color:#555;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 4px">Total</p>
+              <p style="font-size:18px;font-weight:800;color:#D4AF37;letter-spacing:-0.02em;margin:0">${data.currency} ${data.total}</p>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;margin-bottom:20px">
+            <div style="padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.05)">
+              <p style="font-size:11px;font-weight:700;color:#f5f5f7;margin:0">Customer Details</p>
+            </div>
+            ${rows}
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            ${waHref ? `<a href="https://wa.me/${waHref}" style="display:inline-block;background:#25D366;color:#000;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;font-size:13px">WhatsApp Customer</a>` : ''}
+            <a href="https://primekeys.vercel.app/portal/admin" style="display:inline-block;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.35);color:#D4AF37;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;font-size:13px">Open Admin Panel</a>
+          </div>
+        </div>
+        <div style="background:#0a0a0a;padding:14px 36px;border-top:1px solid rgba(255,255,255,0.05);text-align:center">
+          <p style="font-size:10px;color:#333;margin:0">PRIMEKEYS \u00b7 admin@primekeys.app \u00b7 Automated admin alert</p>
+        </div>
+      </div>
+    `,
+  })
+}

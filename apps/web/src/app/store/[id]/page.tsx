@@ -62,9 +62,35 @@ export default function ProductPage() {
     )
   }
 
-  const iconSrc = BRAND_ICONS[product.id]
-  const { total, perMonth, saveLabel } = calcPrice(product.effectiveINR, selectedMonths, currencyCode)
-  const originalTotal = product.discount ? calcPrice(product.customPrice ?? product.baseINR, selectedMonths, currencyCode).total : null
+  // Admin-uploaded logo takes priority over brand SVG
+  const iconSrc = product.customLogo || BRAND_ICONS[product.id]
+
+  // Per-currency override: if admin set a custom monthly price for this currency,
+  // use it directly (scaled by duration multiplier) instead of auto-converting from INR
+  const customMonthlyForCurrency = product.customPrices?.[currencyCode]
+
+  function calcEffectivePrice(months: number) {
+    const p = product! // non-null: guarded above
+    if (customMonthlyForCurrency !== undefined) {
+      const dur       = DURATIONS.find(d => d.months === months) || DURATIONS[0]
+      const discRate  = 1 - (p.discount || 0) / 100
+      const monthly   = parseFloat((customMonthlyForCurrency * discRate).toFixed(2))
+      const total     = parseFloat((monthly * months * (dur.mult / months)).toFixed(2))
+      const perMonth  = parseFloat(monthly.toFixed(2))
+      return { total, perMonth, symbol: (CURRENCIES[currencyCode] || CURRENCIES.INR).symbol, saveLabel: dur.saveLabel }
+    }
+    return calcPrice(p.effectiveINR, months, currencyCode)
+  }
+
+  const { total, perMonth, saveLabel } = calcEffectivePrice(selectedMonths)
+  const originalTotal = (() => {
+    if (!product.discount) return null
+    if (customMonthlyForCurrency !== undefined) {
+      const dur = DURATIONS.find(d => d.months === selectedMonths) || DURATIONS[0]
+      return parseFloat((customMonthlyForCurrency * (dur.mult / selectedMonths) * selectedMonths).toFixed(2))
+    }
+    return calcPrice(product.customPrice ?? product.baseINR, selectedMonths, currencyCode).total
+  })()
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
   const isUPI = currencyCode === 'INR'
   const handleUPIOrder = () => {
@@ -115,21 +141,41 @@ export default function ProductPage() {
         <p style={{ fontSize: 11, fontWeight: 600, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Select duration</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
           {DURATIONS.map(dur => {
-            const { total: t, perMonth: pm } = calcPrice(product.effectiveINR, dur.months, currencyCode)
-            const sel = selectedMonths === dur.months
+            const { total: t, perMonth: pm } = calcEffectivePrice(dur.months)
+            const sel          = selectedMonths === dur.months
+            const durStockOut  = (product.stockOutDurations || []).includes(dur.label)
             return (
-              <button key={dur.months} onClick={() => setSelectedMonths(dur.months)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `1px solid ${sel ? product.color + '66' : 'rgba(255,255,255,0.07)'}`, background: sel ? `${product.color}12` : 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}>
+              <button key={dur.months}
+                onClick={() => { if (!durStockOut) setSelectedMonths(dur.months) }}
+                disabled={durStockOut}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 14px', borderRadius: 12,
+                  border: `1px solid ${durStockOut ? 'rgba(248,113,113,0.2)' : sel ? product.color + '66' : 'rgba(255,255,255,0.07)'}`,
+                  background: durStockOut ? 'rgba(248,113,113,0.04)' : sel ? `${product.color}12` : 'transparent',
+                  cursor: durStockOut ? 'not-allowed' : 'pointer',
+                  opacity: durStockOut ? 0.55 : 1,
+                  transition: 'all 0.15s',
+                }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${sel ? product.color : '#444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {sel && <div style={{ width: 8, height: 8, borderRadius: '50%', background: product.color }} />}
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${durStockOut ? '#f87171' : sel ? product.color : '#444'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {sel && !durStockOut && <div style={{ width: 8, height: 8, borderRadius: '50%', background: product.color }} />}
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: sel ? 700 : 400, color: sel ? '#f5f5f7' : '#6e6e73' }}>{dur.label}</span>
-                  {dur.saveLabel && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(74,222,128,0.1)', color: '#4ade80', fontWeight: 700 }}>{dur.saveLabel}</span>}
+                  <span style={{ fontSize: 13, fontWeight: sel ? 700 : 400, color: durStockOut ? '#f87171' : sel ? '#f5f5f7' : '#6e6e73' }}>{dur.label}</span>
+                  {durStockOut
+                    ? <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(248,113,113,0.1)', color: '#f87171', fontWeight: 700 }}>OUT OF STOCK</span>
+                    : dur.saveLabel
+                      ? <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: 'rgba(74,222,128,0.1)', color: '#4ade80', fontWeight: 700 }}>{dur.saveLabel}</span>
+                      : null
+                  }
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: sel ? '#f5f5f7' : '#555' }}>{formatPrice(t, currencyCode)}</p>
-                  <p style={{ fontSize: 10, color: '#444' }}>{formatPrice(pm, currencyCode)}/mo</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: durStockOut ? '#555' : sel ? '#f5f5f7' : '#555' }}>
+                    {durStockOut ? '—' : (currencyCode === 'INR' ? `₹${Math.round(t)}` : `${curr.symbol}${t}`)}
+                  </p>
+                  <p style={{ fontSize: 10, color: '#444' }}>
+                    {!durStockOut && `${currencyCode === 'INR' ? `₹${Math.round(pm)}` : `${curr.symbol}${pm}`}/mo`}
+                  </p>
                 </div>
               </button>
             )

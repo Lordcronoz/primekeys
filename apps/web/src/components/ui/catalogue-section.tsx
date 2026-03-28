@@ -24,8 +24,9 @@ type Product = {
   id: string; name: string; basePrice: number; category: string; emoji: string
   discount?: number; stockOut?: boolean; customPrice?: number; isCustom?: boolean
   featured?: boolean; flashSaleEnd?: string; bulkDiscount?: number; bulkMinMonths?: number
-  customLogo?: string // base64 uploaded logo
-  customPrices?: Record<string, number> // per-currency price overrides e.g. { USD: 5.99, AED: 22 }
+  customLogo?: string
+  customPrices?: Record<string, number>
+  stockOutDurations?: string[] // e.g. ['1 Month', '3 Months']
 }
 
 const BASE_PRODUCTS: Product[] = PRODUCTS.map(p => ({
@@ -132,15 +133,16 @@ export function CatalogueSection() {
       await setDoc(doc(db,'catalogue','config'), {
         [p.id]: {
           ...(p.isCustom ? { name:p.name, basePrice:p.basePrice, category:p.category, emoji:p.emoji, isCustom:true } : {}),
-          customPrice:   p.customPrice ?? null,
-          discount:      p.discount ?? 0,
-          stockOut:      p.stockOut ?? false,
-          featured:      p.featured ?? false,
-          flashSaleEnd:  p.flashSaleEnd ?? null,
-          bulkDiscount:  p.bulkDiscount ?? 0,
-          bulkMinMonths: p.bulkMinMonths ?? 3,
-          customLogo:    p.customLogo ?? null,
-          customPrices:  p.customPrices ?? null,
+          customPrice:       p.customPrice ?? null,
+          discount:          p.discount ?? 0,
+          stockOut:          p.stockOut ?? false,
+          featured:          p.featured ?? false,
+          flashSaleEnd:      p.flashSaleEnd ?? null,
+          bulkDiscount:      p.bulkDiscount ?? 0,
+          bulkMinMonths:     p.bulkMinMonths ?? 3,
+          customLogo:        p.customLogo ?? null,
+          customPrices:      p.customPrices ?? null,
+          stockOutDurations: p.stockOutDurations ?? [],
         }
       }, { merge: true })
       setSaved(p.id); setTimeout(() => setSaved(null), 2000)
@@ -161,7 +163,7 @@ export function CatalogueSection() {
     const id = newSvc.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')
     try {
       await setDoc(doc(db,'catalogue','config'), {
-        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3, customLogo:null }
+        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3, customLogo:null, stockOutDurations:[] }
       }, { merge: true })
       setNewSvc({ name:'', basePrice:'', category:'streaming', emoji:'📦' }); setShowAdd(false)
     } catch(e) { console.error(e) } finally { setAdding(false) }
@@ -269,7 +271,7 @@ export function CatalogueSection() {
                       <Check size={11}/>Saved
                     </div>
                   ) : (
-                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3,customLogo:p.customLogo})} }}
+                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3,customLogo:p.customLogo,stockOutDurations:p.stockOutDurations||[]})} }}
                       style={{ display:'flex', alignItems:'center', gap:4, height:30, padding:'0 10px', borderRadius:7, background:isEdit?'rgba(212,175,55,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${isEdit?'rgba(212,175,55,0.3)':'rgba(255,255,255,0.08)'}`, color:isEdit?'#D4AF37':'#a1a1a6', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                       {isEdit?<><X size={11}/>Cancel</>:<><Edit3 size={11}/>Edit</>}
                     </button>
@@ -344,6 +346,27 @@ export function CatalogueSection() {
                         {editValues.stockOut?<><AlertTriangle size={12}/>Out of Stock</>:<><Check size={12}/>Available</>}
                       </button>
                     </div>
+                    {/* Duration Stock Control */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{...lbl, color:'#f87171', marginBottom:8}}>Duration Availability — toggle off to mark out of stock</label>
+                      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                        {['1 Month','3 Months','6 Months','1 Year'].map(dur => {
+                          const isOut = (editValues.stockOutDurations || []).includes(dur)
+                          return (
+                            <button key={dur} type="button"
+                              onClick={() => setEditValues(v => {
+                                const current = v.stockOutDurations || []
+                                const next = isOut ? current.filter(d => d !== dur) : [...current, dur]
+                                return { ...v, stockOutDurations: next }
+                              })}
+                              style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', border:`1px solid ${isOut?'rgba(248,113,113,0.4)':'rgba(74,222,128,0.3)'}`, background:isOut?'rgba(248,113,113,0.1)':'rgba(74,222,128,0.08)', color:isOut?'#f87171':'#4ade80', transition:'all 0.15s' }}>
+                              {isOut ? '✗ ' : '✓ '}{dur}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <p style={{fontSize:10,color:'#444',marginTop:6}}>Red = out of stock for that duration. Reflected instantly in the store.</p>
+                    </div>
                     {/* Logo upload */}
                     <div style={{ gridColumn: 'span 2' }}>
                       <LogoUpload
@@ -364,7 +387,7 @@ export function CatalogueSection() {
                         if (!isNaN(n) && n > 0) customPrices[code] = n
                       })
                     }
-                    const u={...p,...editValues,flashSaleEnd:flashEnd||p.flashSaleEnd,customPrices:Object.keys(customPrices).length?customPrices:p.customPrices}
+                    const u={...p,...editValues,flashSaleEnd:flashEnd||p.flashSaleEnd,customPrices:Object.keys(customPrices).length?customPrices:p.customPrices,stockOutDurations:editValues.stockOutDurations||[]}
                     setProducts(prev=>prev.map(x=>x.id===p.id?u:x)); save(u)
                   }} disabled={isSav} style={{ height:36, padding:'0 20px', background:isSav?'rgba(212,175,55,0.3)':'linear-gradient(135deg,#D4AF37,#C49A20)', color:'#000', border:'none', borderRadius:9, fontSize:13, fontWeight:700, cursor:isSav?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:6 }}>
                     {isSav?<Spin/>:<><Save size={12}/>Save Changes</>}
