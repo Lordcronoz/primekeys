@@ -36,6 +36,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@firebase/app-check':
+        specifier: ^0.8.8
+        version: 0.8.8(@firebase/app@0.10.13)
       '@paypal/react-paypal-js':
         specifier: ^9.1.0
         version: 9.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
