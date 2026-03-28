@@ -68,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
         background: '#1d1d1f',
         borderRadius: 20, padding: 24,
         display: 'flex', flexDirection: 'column', gap: 12,
-        minHeight: 200, height: '100%', cursor: isStockOut ? 'not-allowed' : 'pointer',
+        minHeight: 240, cursor: isStockOut ? 'not-allowed' : 'pointer',
         transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         opacity: isStockOut ? 0.5 : 1,
         position: 'relative', overflow: 'hidden',

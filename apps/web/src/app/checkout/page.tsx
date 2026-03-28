@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { PRODUCTS, calcPrice, formatPrice, UPI_ID, WISE_LINK } from '@primekeys/shared'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useAuth } from '@/context/AuthContext'
+import { useCatalogue } from '@/hooks/useCatalogue'
 import { createOrder, verifyUPI } from '@/lib/api'
 import Link from 'next/link'
 
@@ -97,7 +98,8 @@ function CheckoutContent() {
 
   const productId = searchParams.get('product')
   const months = parseInt(searchParams.get('months') || '3')
-  const product = PRODUCTS.find(p => p.id === productId)
+  const catalogue = useCatalogue()
+  const product = catalogue.find(p => p.id === productId) || PRODUCTS.find(p => p.id === productId)
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
@@ -117,7 +119,7 @@ function CheckoutContent() {
 
   if (!product) return null
 
-  const pricing = calcPrice(product.baseINR, months, currencyCode)
+  const pricing = calcPrice((product as any).effectiveINR || product.baseINR, months, currencyCode)
 
   const handleSubmitDetails = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('')
