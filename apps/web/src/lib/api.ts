@@ -18,6 +18,7 @@ export async function createOrder(payload: {
   duration: number
   total: number
   currency: string
+  referralCode?: string
 }) {
   return request('/api/order', {
     method: 'POST',
