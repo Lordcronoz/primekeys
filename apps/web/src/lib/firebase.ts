@@ -1,7 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from '@firebase/app-check'
 
 const firebaseConfig = {
   apiKey:            'AIzaSyCHWc7r9W6GjGcNKYhQPxPqCETnUkEcCSM',
@@ -18,11 +17,16 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app)
 export const db   = getFirestore(app)
 
-initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider(
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LfplaceholderREPLACEME'
-  ),
-  isTokenAutoRefreshEnabled: true,
-})
+// App Check — browser only (document doesn't exist during SSR)
+if (typeof window !== 'undefined') {
+  import('@firebase/app-check').then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LfplaceholderREPLACEME'
+      ),
+      isTokenAutoRefreshEnabled: true,
+    })
+  }).catch(() => {})
+}
 
 export default app
