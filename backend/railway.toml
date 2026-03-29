@@ -1,0 +1,8 @@
+[build]
+  builder = "NIXPACKS"
+  buildCommand = "corepack enable pnpm && pnpm install && pnpm build"
+
+[deploy]
+  startCommand = "node dist/server.js"
+  restartPolicyType = "ON_FAILURE"
+  restartPolicyAmount = 10
