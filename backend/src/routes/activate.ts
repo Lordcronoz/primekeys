@@ -62,8 +62,8 @@ router.post('/activate', requireAdmin, validate(activateSchema), async (req, res
       currency: currency || 'INR',
       orderId,
       credentials: {
-        email: credentials.split('\n').find(l => l.toLowerCase().includes('email'))?.split(':')[1]?.trim() || '',
-        password: credentials.split('\n').find(l => l.toLowerCase().includes('password'))?.split(':')[1]?.trim() || credentials,
+        email: credentials.split('\n').find((l: string) => l.toLowerCase().includes('email'))?.split(':')[1]?.trim() || '',
+        password: credentials.split('\n').find((l: string) => l.toLowerCase().includes('password'))?.split(':')[1]?.trim() || credentials,
       },
     })
 
