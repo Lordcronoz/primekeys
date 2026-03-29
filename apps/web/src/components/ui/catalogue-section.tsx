@@ -27,6 +27,7 @@ type Product = {
   customLogo?: string
   customPrices?: Record<string, number>
   stockOutDurations?: string[] // e.g. ['1 Month', '3 Months']
+  description?: string
 }
 
 const BASE_PRODUCTS: Product[] = PRODUCTS.map(p => ({
@@ -114,7 +115,7 @@ export function CatalogueSection() {
   const [editValues, setEditValues] = useState<Partial<Product> & { flashSaleHours?: number; editPrices?: Record<string, string> }>({})
   const [saved, setSaved] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
-  const [newSvc, setNewSvc] = useState({ name: '', basePrice: '', category: 'streaming', emoji: '📦' })
+  const [newSvc, setNewSvc] = useState({ name: '', basePrice: '', category: 'streaming', emoji: '📦', description: '' })
   const [adding, setAdding] = useState(false)
 
   useEffect(() => {
@@ -143,6 +144,7 @@ export function CatalogueSection() {
           customLogo:        p.customLogo ?? null,
           customPrices:      p.customPrices ?? null,
           stockOutDurations: p.stockOutDurations ?? [],
+          description:       p.description ?? null,
         }
       }, { merge: true })
       setSaved(p.id); setTimeout(() => setSaved(null), 2000)
@@ -163,9 +165,9 @@ export function CatalogueSection() {
     const id = newSvc.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')
     try {
       await setDoc(doc(db,'catalogue','config'), {
-        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3, customLogo:null, stockOutDurations:[] }
+        [id]: { name:newSvc.name.trim(), basePrice:Number(newSvc.basePrice), category:newSvc.category, emoji:newSvc.emoji||'📦', description:newSvc.description.trim()||null, isCustom:true, discount:0, stockOut:false, customPrice:null, featured:false, flashSaleEnd:null, bulkDiscount:0, bulkMinMonths:3, customLogo:null, stockOutDurations:[] }
       }, { merge: true })
-      setNewSvc({ name:'', basePrice:'', category:'streaming', emoji:'📦' }); setShowAdd(false)
+      setNewSvc({ name:'', basePrice:'', category:'streaming', emoji:'📦', description:'' }); setShowAdd(false)
     } catch(e) { console.error(e) } finally { setAdding(false) }
   }
 
@@ -198,11 +200,24 @@ export function CatalogueSection() {
       {showAdd && (
         <div style={{ marginBottom:20, padding:20, background:'rgba(212,175,55,0.04)', border:'1px solid rgba(212,175,55,0.2)', borderRadius:16 }}>
           <p style={{ fontSize:13, fontWeight:700, color:'#D4AF37', marginBottom:16 }}>New Service</p>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 80px', gap:12, marginBottom:14 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 80px', gap:12, marginBottom:12 }}>
             <div><label style={lbl}>Name</label><input type="text" value={newSvc.name} onChange={e=>setNewSvc(v=>({...v,name:e.target.value}))} placeholder="e.g. Duolingo Plus" style={fld} onFocus={e=>(e.currentTarget.style.borderColor='rgba(212,175,55,0.5)')} onBlur={e=>(e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}/></div>
             <div><label style={lbl}>Price (₹/mo)</label><input type="number" min={1} value={newSvc.basePrice} onChange={e=>setNewSvc(v=>({...v,basePrice:e.target.value}))} placeholder="199" style={fld} onFocus={e=>(e.currentTarget.style.borderColor='rgba(212,175,55,0.5)')} onBlur={e=>(e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}/></div>
             <div><label style={lbl}>Category</label><select value={newSvc.category} onChange={e=>setNewSvc(v=>({...v,category:e.target.value}))} style={{...fld,cursor:'pointer'}}>{CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
             <div><label style={lbl}>Emoji</label><input type="text" value={newSvc.emoji} onChange={e=>setNewSvc(v=>({...v,emoji:e.target.value}))} style={{...fld,textAlign:'center',fontSize:18}}/></div>
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <label style={lbl}>Description <span style={{ color:'#444', textTransform:'none', letterSpacing:0 }}>(shown on store product page)</span></label>
+            <textarea
+              value={newSvc.description}
+              onChange={e=>setNewSvc(v=>({...v,description:e.target.value}))}
+              placeholder="e.g. Ad-free learning. Offline mode. All courses included."
+              rows={2}
+              style={{...fld, height:'auto', padding:'8px 10px', resize:'vertical', lineHeight:1.5}}
+              onFocus={e=>(e.currentTarget.style.borderColor='rgba(212,175,55,0.5)')}
+              onBlur={e=>(e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}
+            />
+            <p style={{fontSize:10,color:'#444',marginTop:3}}>Optional — leave blank to use a default. Editable later via the Edit panel.</p>
           </div>
           <button onClick={addSvc} disabled={adding||!newSvc.name.trim()||!newSvc.basePrice} style={{ height:38, padding:'0 20px', background:!newSvc.name.trim()?'rgba(212,175,55,0.3)':'linear-gradient(135deg,#D4AF37,#C49A20)', color:'#000', border:'none', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
             {adding ? <Spin/> : <><Plus size={13}/>Add to Catalogue</>}
@@ -271,7 +286,7 @@ export function CatalogueSection() {
                       <Check size={11}/>Saved
                     </div>
                   ) : (
-                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3,customLogo:p.customLogo,stockOutDurations:p.stockOutDurations||[]})} }}
+                    <button onClick={()=>{ if(isEdit){setEditing(null)}else{setEditing(p.id);setEditValues({basePrice:p.basePrice,customPrice:p.customPrice,discount:p.discount||0,stockOut:p.stockOut||false,featured:p.featured||false,flashSaleHours:0,bulkDiscount:p.bulkDiscount||0,bulkMinMonths:p.bulkMinMonths||3,customLogo:p.customLogo,stockOutDurations:p.stockOutDurations||[],description:p.description||''})} }}
                       style={{ display:'flex', alignItems:'center', gap:4, height:30, padding:'0 10px', borderRadius:7, background:isEdit?'rgba(212,175,55,0.12)':'rgba(255,255,255,0.04)', border:`1px solid ${isEdit?'rgba(212,175,55,0.3)':'rgba(255,255,255,0.08)'}`, color:isEdit?'#D4AF37':'#a1a1a6', fontSize:11, fontWeight:600, cursor:'pointer' }}>
                       {isEdit?<><X size={11}/>Cancel</>:<><Edit3 size={11}/>Edit</>}
                     </button>
@@ -366,6 +381,20 @@ export function CatalogueSection() {
                         })}
                       </div>
                       <p style={{fontSize:10,color:'#444',marginTop:6}}>Red = out of stock for that duration. Reflected instantly in the store.</p>
+                    </div>
+                    {/* Description */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={lbl}>Description <span style={{ color:'#444', textTransform:'none', letterSpacing:0 }}>(shown on store product page)</span></label>
+                      <textarea
+                        value={editValues.description ?? p.description ?? ''}
+                        onChange={e => setEditValues(v => ({ ...v, description: e.target.value }))}
+                        placeholder="Short description customers see on the product page…"
+                        rows={2}
+                        style={{...fld, height:'auto', padding:'8px 10px', resize:'vertical', lineHeight:1.5}}
+                        onFocus={e => (e.currentTarget.style.borderColor='rgba(212,175,55,0.5)')}
+                        onBlur={e => (e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}
+                      />
+                      <p style={{fontSize:10,color:'#444',marginTop:3}}>Updates live on the store the moment you save.</p>
                     </div>
                     {/* Logo upload */}
                     <div style={{ gridColumn: 'span 2' }}>
