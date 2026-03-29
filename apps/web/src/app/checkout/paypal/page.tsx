@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Lock, ArrowLeft, Check, MessageCircle } from 'lucide-react'
+import { Shield, Lock, ArrowLeft, Check } from 'lucide-react'
 import { confirmPayPalOrder } from '@/lib/api'
 
 const CLIENT_ID  = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!
@@ -22,14 +22,29 @@ function PayPalButtonsInner({ total, currency, description, onSuccess, onError }
   const [{ isResolved, isRejected }] = usePayPalScriptReducer()
 
   if (isRejected) return (
-    <a href="https://wa.me/918111956481" target="_blank" rel="noreferrer" style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-      height: 50, borderRadius: 10, textDecoration: 'none',
-      background: '#e8f9ee', border: '1px solid #a8e6bc',
-      color: '#1a7840', fontSize: 14, fontWeight: 600,
+    <div style={{
+      padding: '16px 20px',
+      borderRadius: 12,
+      background: '#fff8f0',
+      border: '1px solid #fde68a',
+      color: '#92400e',
+      fontSize: 13,
+      lineHeight: 1.6,
     }}>
-      <MessageCircle size={16} /> Complete via WhatsApp
-    </a>
+      <p style={{ fontWeight: 700, marginBottom: 4 }}>PayPal failed to load.</p>
+      <p style={{ color: '#b45309', marginBottom: 12 }}>Please check your internet connection and refresh the page to try again.</p>
+      <button
+        onClick={() => window.location.reload()}
+        style={{
+          height: 38, padding: '0 18px',
+          background: '#FFD140', border: 'none',
+          borderRadius: 8, color: '#003087',
+          fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        Refresh & Retry
+      </button>
+    </div>
   )
 
   if (!isResolved) return (
@@ -343,12 +358,19 @@ function CheckoutContent() {
 
                 <p className="co-method-label">Select payment method</p>
 
-                <PayPalScriptProvider options={{ clientId: CLIENT_ID, currency, intent: 'capture' }}>
-                  <PayPalButtonsInner
-                    total={total} currency={currency} description={desc}
-                    onSuccess={handleSuccess} onError={() => setError(true)}
-                  />
-                </PayPalScriptProvider>
+                {CLIENT_ID ? (
+                  <PayPalScriptProvider options={{ clientId: CLIENT_ID, currency, intent: 'capture' }}>
+                    <PayPalButtonsInner
+                      total={total} currency={currency} description={desc}
+                      onSuccess={handleSuccess} onError={() => setError(true)}
+                    />
+                  </PayPalScriptProvider>
+                ) : (
+                  <div style={{ padding: '16px 20px', borderRadius: 12, background: '#fff8f0', border: '1px solid #fde68a', color: '#92400e', fontSize: 13 }}>
+                    <p style={{ fontWeight: 700, marginBottom: 4 }}>PayPal not configured.</p>
+                    <p style={{ color: '#b45309' }}>The <code>NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> environment variable is missing. Add it in your Vercel project settings.</p>
+                  </div>
+                )}
 
                 <button onClick={() => router.back()} className="co-back-btn">
                   <ArrowLeft size={13} /> Go back

@@ -103,16 +103,21 @@ export default function ProductPage() {
   }
 
   const handlePayPalCheckout = () => {
-    const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'EUR'
-    const params = new URLSearchParams({
-      product: product.id,
-      name:     product.name,
-      months:   String(selectedMonths),
-      total:    String(calcPrice(product.effectiveINR, selectedMonths, paypalCurrency).total),
-      currency: paypalCurrency,
-      icon:     encodeURIComponent(BRAND_ICONS[product.id] || ''),
+    const paypalCurrency = PAYPAL_CURRENCIES.includes(currencyCode) ? currencyCode : 'USD'
+    // If we had to fall back to a different PayPal currency, recalculate the price in that currency
+    const { total: paypalTotal } = paypalCurrency === currencyCode
+      ? calcEffectivePrice(selectedMonths)
+      : calcPrice(product.effectiveINR, selectedMonths, paypalCurrency)
+    const checkoutParams = new URLSearchParams({
+      product:    product.id,
+      name:       product.name,
+      months:     String(selectedMonths),
+      total:      String(paypalTotal),
+      currency:   paypalCurrency,
+      productId:  product.id,
+      icon:       encodeURIComponent(product.customLogo || BRAND_ICONS[product.id] || ''),
     })
-    window.location.href = `/checkout/paypal?${params.toString()}`
+    window.location.href = `/checkout/paypal?${checkoutParams.toString()}`
   }
 
   const orderCard = (
@@ -192,7 +197,7 @@ export default function ProductPage() {
             </div>
           </div>
           <p style={{ fontSize: 10, color: '#444', marginTop: 6 }}>
-            Pay via {isUPI ? 'UPI' : 'PayPal'} · Delivered on WhatsApp within 5 min
+            Pay via PayPal · Delivered on WhatsApp within 5 min
           </p>
         </div>
 
@@ -201,29 +206,33 @@ export default function ProductPage() {
           <div style={{ width: '100%', height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 14, fontWeight: 600 }}>
             Currently Out of Stock
           </div>
-        ) : isUPI ? (
-          // ── UPI / WhatsApp button ──
-          <button onClick={handleUPIOrder} disabled={ordering}
-            style={{ width: '100%', height: 52, borderRadius: 14, background: ordering ? 'rgba(212,175,55,0.4)' : 'linear-gradient(135deg, #D4AF37, #C49A20)', border: 'none', color: '#000', fontSize: 15, fontWeight: 700, cursor: ordering ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity 0.2s', boxShadow: '0 0 24px rgba(212,175,55,0.2)' }}
-            onMouseEnter={e => { if (!ordering) (e.currentTarget.style.opacity = '0.9') }}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-            <MessageCircle size={17} />
-            {ordering ? 'Opening WhatsApp...' : 'Order via WhatsApp'}
-          </button>
         ) : (
-          // ── PayPal — opens dedicated checkout page in new tab ──
-          <button onClick={handlePayPalCheckout}
-            style={{ width: '100%', height: 52, borderRadius: 14, background: '#FFD140', border: 'none', color: '#003087', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity 0.2s', letterSpacing: '-0.01em' }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-            <svg height="20" viewBox="0 0 124 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M46.211 6.749h-6.839a.95.95 0 0 0-.939.802l-2.766 17.537a.57.57 0 0 0 .564.658h3.265a.95.95 0 0 0 .939-.803l.746-4.73a.95.95 0 0 1 .938-.803h2.165c4.505 0 7.105-2.18 7.784-6.5.306-1.89.013-3.375-.872-4.415-.972-1.142-2.696-1.746-4.985-1.746zM47 13.154c-.374 2.454-2.249 2.454-4.062 2.454h-1.032l.724-4.583a.57.57 0 0 1 .563-.481h.473c1.235 0 2.4 0 3.002.704.359.42.469 1.044.332 1.906zM66.654 13.075h-3.275a.57.57 0 0 0-.563.481l-.145.916-.229-.332c-.709-1.029-2.29-1.373-3.868-1.373-3.619 0-6.71 2.741-7.312 6.586-.313 1.918.132 3.752 1.22 5.031.998 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .562.66h2.95a.95.95 0 0 0 .939-.803l1.77-11.209a.568.568 0 0 0-.561-.658zm-4.565 6.374c-.316 1.871-1.801 3.127-3.695 3.127-.951 0-1.711-.305-2.199-.883-.484-.574-.668-1.391-.514-2.301.295-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.499.589.697 1.411.554 2.317zM84.096 13.075h-3.291a.954.954 0 0 0-.787.417l-4.539 6.686-1.924-6.425a.953.953 0 0 0-.912-.678h-3.234a.57.57 0 0 0-.541.754l3.625 10.638-3.408 4.811a.57.57 0 0 0 .465.9h3.287a.949.949 0 0 0 .781-.408l10.946-15.8a.57.57 0 0 0-.468-.895z" fill="#003087"/>
-              <path d="M94.992 6.749h-6.84a.95.95 0 0 0-.938.802l-2.766 17.537a.569.569 0 0 0 .562.658h3.51a.665.665 0 0 0 .656-.562l.785-4.971a.95.95 0 0 1 .938-.803h2.164c4.506 0 7.105-2.18 7.785-6.5.307-1.89.012-3.375-.873-4.415-.971-1.142-2.694-1.746-4.983-1.746zm.789 6.405c-.373 2.454-2.248 2.454-4.062 2.454h-1.031l.725-4.583a.568.568 0 0 1 .562-.481h.473c1.234 0 2.4 0 3.002.704.359.42.468 1.044.331 1.906zM115.434 13.075h-3.273a.567.567 0 0 0-.562.481l-.145.916-.23-.332c-.709-1.029-2.289-1.373-3.867-1.373-3.619 0-6.709 2.741-7.311 6.586-.312 1.918.131 3.752 1.219 5.031 1 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .564.66h2.949a.95.95 0 0 0 .938-.803l1.771-11.209a.571.571 0 0 0-.565-.658zm-4.565 6.374c-.314 1.871-1.801 3.127-3.695 3.127-.949 0-1.711-.305-2.199-.883-.484-.574-.666-1.391-.514-2.301.297-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.501.589.699 1.411.554 2.317zM119.295 7.23l-2.807 17.858a.569.569 0 0 0 .562.658h2.822c.524 0 .969-.381.938-.803l2.768-17.536a.57.57 0 0 0-.562-.659h-3.158a.571.571 0 0 0-.563.482z" fill="#009cde"/>
-              <path d="M7.266 29.154l.523-3.322-1.165-.027H1.061L4.927 1.292a.316.316 0 0 1 .314-.268h9.38c3.114 0 5.263.648 6.385 1.927.526.6.861 1.227 1.023 1.917.17.724.173 1.589.007 2.644l-.012.077v.676l.526.298a3.69 3.69 0 0 1 1.065.812c.45.513.741 1.165.864 1.938.127.795.085 1.741-.123 2.812-.24 1.232-.628 2.305-1.152 3.183a6.547 6.547 0 0 1-1.825 2.07c-.696.49-1.523.861-2.458 1.104-.907.237-1.945.357-3.083.357h-.734c-.524 0-1.033.188-1.434.528a2.249 2.249 0 0 0-.744 1.362l-.055.299-1.029 6.527-.047.239c-.012.076-.032.114-.059.139a.158.158 0 0 1-.101.038H7.266z" fill="#003087"/>
-              <path d="M23.048 7.667c-.028.179-.06.362-.096.55-1.237 6.351-5.469 8.545-10.874 8.545H9.326c-.661 0-1.218.48-1.321 1.132L6.596 26.83l-.399 2.533a.704.704 0 0 0 .695.814h4.881c.578 0 1.069-.420 1.16-.990l.048-.248.919-5.832.059-.32c.09-.572.582-.992 1.16-.992h.73c4.729 0 8.431-1.92 9.513-7.476.452-2.321.218-4.259-.978-5.622a4.667 4.667 0 0 0-1.336-1.030z" fill="#009cde"/>
-              <path d="M21.791 7.151a9.757 9.757 0 0 0-1.203-.267 15.284 15.284 0 0 0-2.426-.177h-7.352a1.172 1.172 0 0 0-1.159.992L8.05 17.605l-.045.289a1.336 1.336 0 0 1 1.321-1.132h2.752c5.405 0 9.637-2.195 10.874-8.545.037-.188.068-.371.096-.55a6.645 6.645 0 0 0-1.257-.516z" fill="#012169"/>
-            </svg>
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* ── PayPal (all currencies) ── */}
+            <button onClick={handlePayPalCheckout}
+              style={{ width: '100%', height: 52, borderRadius: 14, background: '#FFD140', border: 'none', color: '#003087', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity 0.2s', letterSpacing: '-0.01em' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+              <svg height="20" viewBox="0 0 124 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M46.211 6.749h-6.839a.95.95 0 0 0-.939.802l-2.766 17.537a.57.57 0 0 0 .564.658h3.265a.95.95 0 0 0 .939-.803l.746-4.73a.95.95 0 0 1 .938-.803h2.165c4.505 0 7.105-2.18 7.784-6.5.306-1.89.013-3.375-.872-4.415-.972-1.142-2.696-1.746-4.985-1.746zM47 13.154c-.374 2.454-2.249 2.454-4.062 2.454h-1.032l.724-4.583a.57.57 0 0 1 .563-.481h.473c1.235 0 2.4 0 3.002.704.359.42.469 1.044.332 1.906zM66.654 13.075h-3.275a.57.57 0 0 0-.563.481l-.145.916-.229-.332c-.709-1.029-2.29-1.373-3.868-1.373-3.619 0-6.71 2.741-7.312 6.586-.313 1.918.132 3.752 1.22 5.031.998 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .562.66h2.95a.95.95 0 0 0 .939-.803l1.77-11.209a.568.568 0 0 0-.561-.658zm-4.565 6.374c-.316 1.871-1.801 3.127-3.695 3.127-.951 0-1.711-.305-2.199-.883-.484-.574-.668-1.391-.514-2.301.295-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.499.589.697 1.411.554 2.317zM84.096 13.075h-3.291a.954.954 0 0 0-.787.417l-4.539 6.686-1.924-6.425a.953.953 0 0 0-.912-.678h-3.234a.57.57 0 0 0-.541.754l3.625 10.638-3.408 4.811a.57.57 0 0 0 .465.9h3.287a.949.949 0 0 0 .781-.408l10.946-15.8a.57.57 0 0 0-.468-.895z" fill="#003087"/>
+                <path d="M94.992 6.749h-6.84a.95.95 0 0 0-.938.802l-2.766 17.537a.569.569 0 0 0 .562.658h3.51a.665.665 0 0 0 .656-.562l.785-4.971a.95.95 0 0 1 .938-.803h2.164c4.506 0 7.105-2.18 7.785-6.5.307-1.89.012-3.375-.873-4.415-.971-1.142-2.694-1.746-4.983-1.746zm.789 6.405c-.373 2.454-2.248 2.454-4.062 2.454h-1.031l.725-4.583a.568.568 0 0 1 .562-.481h.473c1.234 0 2.4 0 3.002.704.359.42.468 1.044.331 1.906zM115.434 13.075h-3.273a.567.567 0 0 0-.562.481l-.145.916-.23-.332c-.709-1.029-2.289-1.373-3.867-1.373-3.619 0-6.709 2.741-7.311 6.586-.312 1.918.131 3.752 1.219 5.031 1 1.176 2.426 1.666 4.125 1.666 2.916 0 4.533-1.875 4.533-1.875l-.146.91a.57.57 0 0 0 .564.66h2.949a.95.95 0 0 0 .938-.803l1.771-11.209a.571.571 0 0 0-.565-.658zm-4.565 6.374c-.314 1.871-1.801 3.127-3.695 3.127-.949 0-1.711-.305-2.199-.883-.484-.574-.666-1.391-.514-2.301.297-1.855 1.805-3.152 3.67-3.152.93 0 1.686.309 2.184.892.501.589.699 1.411.554 2.317zM119.295 7.23l-2.807 17.858a.569.569 0 0 0 .562.658h2.822c.524 0 .969-.381.938-.803l2.768-17.536a.57.57 0 0 0-.562-.659h-3.158a.571.571 0 0 0-.563.482z" fill="#009cde"/>
+                <path d="M7.266 29.154l.523-3.322-1.165-.027H1.061L4.927 1.292a.316.316 0 0 1 .314-.268h9.38c3.114 0 5.263.648 6.385 1.927.526.6.861 1.227 1.023 1.917.17.724.173 1.589.007 2.644l-.012.077v.676l.526.298a3.69 3.69 0 0 1 1.065.812c.45.513.741 1.165.864 1.938.127.795.085 1.741-.123 2.812-.24 1.232-.628 2.305-1.152 3.183a6.547 6.547 0 0 1-1.825 2.07c-.696.49-1.523.861-2.458 1.104-.907.237-1.945.357-3.083.357h-.734c-.524 0-1.033.188-1.434.528a2.249 2.249 0 0 0-.744 1.362l-.055.299-1.029 6.527-.047.239c-.012.076-.032.114-.059.139a.158.158 0 0 1-.101.038H7.266z" fill="#003087"/>
+                <path d="M23.048 7.667c-.028.179-.06.362-.096.55-1.237 6.351-5.469 8.545-10.874 8.545H9.326c-.661 0-1.218.48-1.321 1.132L6.596 26.83l-.399 2.533a.704.704 0 0 0 .695.814h4.881c.578 0 1.069-.42 1.16-.99l.048-.248.919-5.832.059-.32c.09-.572.582-.992 1.16-.992h.73c4.729 0 8.431-1.92 9.513-7.476.452-2.321.218-4.259-.978-5.622a4.667 4.667 0 0 0-1.336-1.030z" fill="#009cde"/>
+                <path d="M21.791 7.151a9.757 9.757 0 0 0-1.203-.267 15.284 15.284 0 0 0-2.426-.177h-7.352a1.172 1.172 0 0 0-1.159.992L8.05 17.605l-.045.289a1.336 1.336 0 0 1 1.321-1.132h2.752c5.405 0 9.637-2.195 10.874-8.545.037-.188.068-.371.096-.55a6.645 6.645 0 0 0-1.257-.516z" fill="#012169"/>
+              </svg>
+              Pay with PayPal
+            </button>
+            {/* ── WhatsApp (INR only) ── */}
+            {isUPI && (
+              <button onClick={handleUPIOrder} disabled={ordering}
+                style={{ width: '100%', height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#555', fontSize: 13, fontWeight: 600, cursor: ordering ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'opacity 0.2s' }}
+                onMouseEnter={e => { if (!ordering) (e.currentTarget.style.opacity = '0.7') }}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                <MessageCircle size={15} />
+                {ordering ? 'Opening WhatsApp...' : 'Order via WhatsApp'}
+              </button>
+            )}
+          </div>
         )}
 
         <p style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 12 }}>
