@@ -94,6 +94,9 @@ function TestimonialCard({
     <div className="pk-glass pk-hover" style={{
       borderRadius: 20, padding: '28px 28px 24px',
       position: 'relative', overflow: 'hidden',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       {/* subtle gold top border */}
       <div style={{
@@ -105,6 +108,11 @@ function TestimonialCard({
         fontSize: 15, color: '#c9c9cc', lineHeight: 1.7,
         marginTop: 14, marginBottom: 20,
         fontStyle: 'italic',
+        flex: 1,
+        display: '-webkit-box',
+        WebkitLineClamp: 4,
+        WebkitBoxOrient: 'vertical' as const,
+        overflow: 'hidden',
       }}>
         &ldquo;{quote}&rdquo;
       </p>
@@ -781,7 +789,7 @@ export default function Home() {
             </p>
           </SectionReveal>
 
-          <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 16 }}>
+          <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 16, alignItems: 'stretch' }}>
             {TESTIMONIALS.map((t) => (
               <StaggerChild key={t.name}>
                 <TestimonialCard {...t} />

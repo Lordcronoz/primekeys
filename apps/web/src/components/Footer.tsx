@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { Instagram, MessageCircle } from 'lucide-react'
 
 const SGC_COMPANIES = [
   { name: 'PRIMEKEYS', url: '/',   live: true,  color: '#D4AF37' },
@@ -79,10 +78,11 @@ export default function Footer() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: 48,
             marginBottom: 64,
+            alignItems: 'stretch',
           }}>
 
             {/* Brand block */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>
                 A Seraph Group Company
               </p>
@@ -94,17 +94,23 @@ export default function Footer() {
                 Premium digital subscriptions delivered to your WhatsApp in under 5 minutes.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <a href="https://instagram.com/primekeys_offical" target="_blank" rel="noreferrer" className="footer-icon-btn">
-                  <Instagram size={15} />
+                <a href="https://instagram.com/primekeys_offical" target="_blank" rel="noreferrer" className="footer-icon-btn" style={{ padding: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor"/>
+                  </svg>
                 </a>
-                <a href="https://wa.me/918111956481" target="_blank" rel="noreferrer" className="footer-icon-btn wa">
-                  <MessageCircle size={15} />
+                <a href="https://wa.me/918111956481" target="_blank" rel="noreferrer" className="footer-icon-btn wa" style={{ padding: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.532 5.864L.057 23.57a.5.5 0 0 0 .614.612l5.807-1.461A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+                  </svg>
                 </a>
               </div>
             </div>
 
             {/* Quick links */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
                 Quick Links
               </p>
@@ -118,7 +124,7 @@ export default function Footer() {
             </div>
 
             {/* SGC ecosystem */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
                 SGC Ecosystem
               </p>
@@ -156,7 +162,7 @@ export default function Footer() {
             </div>
 
             {/* Legal */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 16 }}>
                 Legal
               </p>

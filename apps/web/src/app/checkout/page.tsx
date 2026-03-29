@@ -9,10 +9,8 @@ import { useCatalogue } from '@/hooks/useCatalogue'
 import { createOrder, verifyUPI } from '@/lib/api'
 import Link from 'next/link'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
 async function validatePromo(code: string) {
-  const res = await fetch(`${API_URL}/api/validate-promo`, {
+  const res = await fetch('/api/validate-promo', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),

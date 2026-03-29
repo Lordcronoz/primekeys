@@ -526,17 +526,20 @@ export default function AboutPage() {
           </h2>
         </SectionReveal>
 
-        <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+        <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16, alignItems: 'stretch' }}>
           {values.map(({ Icon, title, body }) => (
             <StaggerChild key={title}>
               <div className="pk-hover" style={{
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 20, padding: '28px 32px',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
               }}>
                 <div style={{ marginBottom: 16 }}><Icon /></div>
                 <h3 style={{ fontSize: 17, fontWeight: 700, color: '#f5f5f7', marginBottom: 10, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ fontSize: 14, color: '#6e6e73', lineHeight: 1.7 }}>{body}</p>
+                <p style={{ fontSize: 14, color: '#6e6e73', lineHeight: 1.7, flex: 1 }}>{body}</p>
               </div>
             </StaggerChild>
           ))}
