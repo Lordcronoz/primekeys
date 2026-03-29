@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
@@ -11,7 +11,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.31.0",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -20,13 +19,11 @@
     "firebase-admin": "^13.7.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
-    "resend": "^6.9.3"
-  },
-  "devDependencies": {
+    "resend": "^6.9.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/node": "^25.4.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "@types/node": "^25.4.0"
   }
 }

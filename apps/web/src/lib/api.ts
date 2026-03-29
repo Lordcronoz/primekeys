@@ -1,7 +1,5 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
 async function request(path: string, options: RequestInit = {}) {
-  const res  = await fetch(`${BASE_URL}${path}`, {
+  const res  = await fetch(path, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   })
@@ -11,26 +9,14 @@ async function request(path: string, options: RequestInit = {}) {
 }
 
 export async function createOrder(payload: {
-  name: string
-  email: string
-  phone: string
-  product: string
-  duration: number
-  total: number
-  currency: string
-  referralCode?: string
+  name: string; email: string; phone: string; product: string
+  duration: number; total: number; currency: string; referralCode?: string
 }) {
-  return request('/api/order', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return request('/api/order', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function verifyUPI(payload: { orderId: string; utrNumber: string }) {
-  return request('/api/verify-upi', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return request('/api/verify-upi', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function addClient(clientData: Record<string, unknown>, idToken: string) {
@@ -42,25 +28,18 @@ export async function addClient(clientData: Record<string, unknown>, idToken: st
 }
 
 export async function getClients(idToken: string) {
-  return request('/api/clients', {
-    headers: { Authorization: `Bearer ${idToken}` },
-  })
+  return request('/api/clients', { headers: { Authorization: `Bearer ${idToken}` } })
 }
 
-export async function addTicket(
-  payload: { uid: string; name: string; email: string; message: string },
-  idToken: string
-) {
+export async function addTicket(payload: { uid: string; name: string; email: string; message: string }, idToken: string) {
   return request('/api/ticket', {
     method: 'POST',
     headers: { Authorization: `Bearer ${idToken}` },
     body: JSON.stringify(payload),
   })
 }
-export async function activateOrder(
-  payload: { orderId: string; credentials: string },
-  adminSecret: string
-) {
+
+export async function activateOrder(payload: { orderId: string; credentials: string }, adminSecret: string) {
   return request('/api/activate', {
     method: 'POST',
     headers: { 'x-admin-secret': adminSecret },
@@ -69,15 +48,10 @@ export async function activateOrder(
 }
 
 export async function getOrder(orderId: string, idToken: string) {
-  return request(`/api/order/${orderId}`, {
-    headers: { Authorization: `Bearer ${idToken}` },
-  })
+  return request(`/api/order?id=${orderId}`, { headers: { Authorization: `Bearer ${idToken}` } })
 }
 
-export async function renewClient(
-  payload: { clientId: string; newExpiry: string; charge: number },
-  idToken: string
-) {
+export async function renewClient(payload: { clientId: string; newExpiry: string; charge: number }, idToken: string) {
   return request('/api/renew', {
     method: 'POST',
     headers: { Authorization: `Bearer ${idToken}` },
@@ -86,25 +60,14 @@ export async function renewClient(
 }
 
 export async function confirmPayPalOrder(payload: {
-  paypalOrderId: string
-  name:          string
-  email:         string
-  phone:         string
-  product:       string
-  duration:      number
-  total:         number
-  currency:      string
+  paypalOrderId: string; name: string; email: string; phone: string
+  product: string; duration: number; total: number; currency: string
 }) {
-  return request('/api/paypal-confirm', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return request('/api/paypal-confirm', { method: 'POST', body: JSON.stringify(payload) })
 }
 
 export async function getConfig(idToken: string) {
-  return request('/api/config', {
-    headers: { Authorization: `Bearer ${idToken}` },
-  })
+  return request('/api/config', { headers: { Authorization: `Bearer ${idToken}` } })
 }
 
 export async function updateConfig(payload: Record<string, string>, idToken: string) {
@@ -116,9 +79,7 @@ export async function updateConfig(payload: Record<string, string>, idToken: str
 }
 
 export async function getTemplates(idToken: string) {
-  return request('/api/templates', {
-    headers: { Authorization: `Bearer ${idToken}` },
-  })
+  return request('/api/templates', { headers: { Authorization: `Bearer ${idToken}` } })
 }
 
 export async function updateTemplates(payload: Record<string, any>, idToken: string) {
@@ -127,4 +88,4 @@ export async function updateTemplates(payload: Record<string, any>, idToken: str
     headers: { Authorization: `Bearer ${idToken}` },
     body: JSON.stringify(payload),
   })
-}
+}
