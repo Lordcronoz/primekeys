@@ -504,7 +504,7 @@ export default function Home() {
               background: '#D4AF37', boxShadow: '0 0 6px rgba(212,175,55,0.8)',
             }} />
             <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-              Seraph Group of Companies
+              S&M Holdings
             </span>
           </motion.div>
 

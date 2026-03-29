@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
 
           <Section title="1. Who We Are">
-            PRIMEKEYS is a digital subscription reselling service operated under Seraph Group of Companies, based in India. We sell access to premium digital platforms including Netflix, Spotify, YouTube Premium, ChatGPT Plus, and others at discounted prices. You can reach us at <a href="https://wa.me/918111956481" style={{ color: '#D4AF37' }}>+91 8111956481</a> or <a href="mailto:admin@primekeys.app" style={{ color: '#D4AF37' }}>admin@primekeys.app</a>.
+            PRIMEKEYS is a digital subscription reselling service operated under S&M Holdings, based in India. We sell access to premium digital platforms including Netflix, Spotify, YouTube Premium, ChatGPT Plus, and others at discounted prices. You can reach us at <a href="https://wa.me/918111956481" style={{ color: '#D4AF37' }}>+91 8111956481</a> or <a href="mailto:admin@primekeys.app" style={{ color: '#D4AF37' }}>admin@primekeys.app</a>.
           </Section>
 
           <Section title="2. Information We Collect">

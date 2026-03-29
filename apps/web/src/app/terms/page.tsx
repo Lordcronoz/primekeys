@@ -43,11 +43,11 @@ export default function TermsOfUse() {
           </Section>
 
           <Section title="8. Intellectual Property">
-            All content on the PRIMEKEYS website including text, graphics, logos, and design is the property of Seraph Group of Companies and may not be reproduced, distributed, or used without express written permission.
+            All content on the PRIMEKEYS website including text, graphics, logos, and design is the property of S&M Holdings and may not be reproduced, distributed, or used without express written permission.
           </Section>
 
           <Section title="9. Limitation of Liability">
-            PRIMEKEYS and Seraph Group of Companies shall not be liable for any indirect, incidental, or consequential damages arising from the use of our service. Our maximum liability in any case shall not exceed the amount paid by you for the relevant order.
+            PRIMEKEYS and S&M Holdings shall not be liable for any indirect, incidental, or consequential damages arising from the use of our service. Our maximum liability in any case shall not exceed the amount paid by you for the relevant order.
           </Section>
 
           <Section title="10. Modifications">

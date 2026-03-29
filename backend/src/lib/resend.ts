@@ -133,7 +133,7 @@ export async function sendOrderConfirmation(data: {
           </div>
         </div>
         <div style="background:#0d0d0d;padding:16px 40px;border-top:1px solid rgba(255,255,255,0.05);text-align:center">
-          <p style="font-size:10px;color:#444;margin:0">PRIMEKEYS \u2014 Seraph Group of Companies \u00b7 primekeys.in</p>
+          <p style="font-size:10px;color:#444;margin:0">PRIMEKEYS \u2014 An S&M Holdings Concern \u00b7 primekeys.in</p>
         </div>
       </div>
     `,
@@ -163,7 +163,7 @@ ${data.credentials}
         </div>
         <p style="color:#999;font-size:14px">Need help setting it up? WhatsApp us anytime.</p>
         <a href="https://wa.me/918111956481" style="display:inline-block;background:#D4AF37;color:#000;font-weight:700;padding:12px 24px;border-radius:999px;text-decoration:none;font-size:14px;margin-top:16px">WhatsApp Support</a>
-        <p style="color:#555;font-size:12px;margin-top:32px">Thank you for choosing PRIMEKEYS \u2014 Seraph Group of Companies</p>
+        <p style="color:#555;font-size:12px;margin-top:32px">Thank you for choosing PRIMEKEYS \u2014 An S&M Holdings Concern</p>
       </div>
     `,
   })

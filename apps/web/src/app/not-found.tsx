@@ -262,7 +262,7 @@ export default function NotFound() {
             <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>KEYS</span>
           </div>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.06em' }}>
-            SERAPH GROUP OF COMPANIES
+            S&M HOLDINGS
           </p>
         </motion.div>
 

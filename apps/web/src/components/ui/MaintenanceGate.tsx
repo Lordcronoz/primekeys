@@ -117,7 +117,7 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
             @primekeys_offical
           </a>
           <p style={{ fontSize: 11, color: '#2a2a2e', marginTop: 20 }}>
-            © {new Date().getFullYear()} PRIMEKEYS · Seraph Group of Companies
+            © {new Date().getFullYear()} PRIMEKEYS · An S&M Holdings Concern
           </p>
         </div>
       </div>

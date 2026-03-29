@@ -30,8 +30,8 @@ const TEAM_PHONES: Record<string, Array<{ phone: string; label: string }>> = {
 }
 // ─────────────────────────────────────────────────────────
 
-const SENDER       = 'Aaron Joy Thomas\nFounder & CEO\nSeraph Group of Companies'
-const SENDER_SHORT = 'Aaron Joy Thomas | Founder & CEO | Seraph Group of Companies'
+const SENDER       = 'Aaron Joy Thomas\nFounder & CEO\nS&M Holdings'
+const SENDER_SHORT = 'Aaron Joy Thomas | Founder & CEO | S&M Holdings'
 
 export interface MaintenanceWindow {
   id: string; title: string; desc: string

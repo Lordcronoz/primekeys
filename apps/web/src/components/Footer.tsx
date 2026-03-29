@@ -84,7 +84,7 @@ export default function Footer() {
             {/* Brand block */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>
-                A Seraph Group Company
+                An S&M Holdings Concern
               </p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 1, marginBottom: 12 }}>
                 <span style={{ fontSize: 20, fontWeight: 800, color: '#D4AF37', letterSpacing: '-0.02em' }}>PRIME</span>
@@ -266,7 +266,7 @@ export default function Footer() {
             justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
           }}>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)' }}>
-              © {new Date().getFullYear()} Seraph Group of Companies. All rights reserved.
+              © {new Date().getFullYear()} S&M Holdings. All rights reserved.
             </p>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)' }}>
               Made with care in India 🇮🇳
