@@ -22,6 +22,6 @@ backend/service-account.*.json
 # Secrets backup files
 *secret*
 *credential*
-*SECURITY-ROTATION.md*
-*README.md*
-*README.md
+SECURITY-ROTATION.md
+README.md
+apps/web/README.md
