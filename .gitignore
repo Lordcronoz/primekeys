@@ -36,11 +36,16 @@ backend/.env
 backend/.env.*
 apps/web/.env.local
 
-# ─── Firebase service account (download fresh from Firebase Console) ──────────
+# ─── Firebase — keep ALL firebase config local (contains emails, project IDs, rules) ──
 backend/service-account.json
 backend/service-account.*.json
 *service-account*
 *serviceAccount*
+firebase.rules
+firestore.rules
+storage.rules
+firebase.json
+.firebaserc
 
 # ─── TypeScript build info ────────────────────────────────────────────────────
 *.tsbuildinfo
