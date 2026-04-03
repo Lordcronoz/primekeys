@@ -590,7 +590,7 @@ img {
 /* ── Disable cursor glow on touch devices ── */
 @media (hover: none) {
   #pk-cursor-glow { display: none !important; }
-  .pk-grain::after { opacity: 0.015 !important; }
+  .pk-grain::after { display: none !important; }
   .orb-a, .orb-b, .orb-c { animation: none !important; }
 }
 

@@ -58,7 +58,7 @@ function CurrencyPicker() {
         <div style={{
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
           width: 230,
-          background: 'rgba(14,14,16,0.98)', backdropFilter: 'blur(20px)',
+          background: 'rgba(14,14,16,0.98)',
           border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14,
           boxShadow: '0 20px 60px rgba(0,0,0,0.7)', zIndex: 9999,
           overflow: 'hidden',
@@ -194,10 +194,10 @@ export function Nav() {
           width: '100%',
           height: scrolled && !mobileOpen ? 44 : 52,
           background: scrolled && !mobileOpen
-            ? 'rgba(10,10,12,0.85)'
+            ? 'rgba(10,10,12,0.88)'
             : mobileOpen ? 'rgba(0,0,0,0.98)' : 'rgba(0,0,0,0.88)',
-          backdropFilter: 'saturate(180%) blur(20px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          backdropFilter: 'saturate(180%) blur(8px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(8px)',
           borderBottom: scrolled && !mobileOpen ? 'none' : '1px solid rgba(255,255,255,0.06)',
           border: scrolled && !mobileOpen ? '1px solid rgba(255,255,255,0.1)' : undefined,
           borderRadius: scrolled && !mobileOpen ? 980 : 0,

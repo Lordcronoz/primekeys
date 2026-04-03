@@ -1,7 +1,7 @@
 'use client'
 
-// All logos rendered in off-white/light grey — premium monochrome look
-// No brand colours. Opacity creates depth.
+import { useEffect, useState } from 'react'
+
 const LOGOS = [
   {
     name: 'Netflix',
@@ -41,44 +41,43 @@ const LOGOS = [
   },
 ]
 
-const TRACK = [...LOGOS, ...LOGOS] // 2x is enough for seamless infinite loop — 4x doubles DOM nodes for no visual benefit
+const TRACK = [...LOGOS, ...LOGOS]
 
-const ICON_COLOR = 'rgba(245, 245, 247, 0.55)' // Off-white, monochrome
+const ICON_COLOR = 'rgba(245, 245, 247, 0.55)'
 
-function LogoRow({ reverse = false }: { reverse?: boolean }) {
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    setIsMobile(window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768)
+  }, [])
+  return isMobile
+}
+
+function LogoRow({ reverse = false, isMobile = false }: { reverse?: boolean; isMobile?: boolean }) {
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', gap: 28, padding: '10px 24px', alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        {['Netflix', 'Spotify', 'YouTube', 'ChatGPT', 'Disney+', 'Canva'].map(name => {
+          const logo = LOGOS.find(l => l.name === name)
+          if (!logo) return null
+          return (
+            <div key={name} title={name} style={{ width: 22, height: 22, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ICON_COLOR, opacity: 0.6 }} dangerouslySetInnerHTML={{ __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `) }} />
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div style={{ overflow: 'hidden', position: 'relative' }}>
-      {/* Fade edges */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, bottom: 0, width: 100,
-        background: 'linear-gradient(to right, #000, transparent)', zIndex: 2, pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', top: 0, right: 0, bottom: 0, width: 100,
-        background: 'linear-gradient(to left, #000, transparent)', zIndex: 2, pointerEvents: 'none',
-      }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '100%', background: 'linear-gradient(to right, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '100%', background: 'linear-gradient(to left, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
       <div
         className={reverse ? 'animate-ticker-right' : 'animate-ticker-left'}
         style={{ display: 'flex', gap: 36, width: 'max-content', padding: '14px 0', alignItems: 'center' }}
       >
         {TRACK.map((logo, i) => (
-          <div
-            key={`${logo.name}-${i}`}
-            title={logo.name}
-            style={{
-              width: 28,
-              height: 28,
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: ICON_COLOR,
-              opacity: 0.7,
-            }}
-            dangerouslySetInnerHTML={{
-              __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `),
-            }}
-          />
+          <div key={`${logo.name}-${i}`} title={logo.name} style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ICON_COLOR, opacity: 0.7 }} dangerouslySetInnerHTML={{ __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `) }} />
         ))}
       </div>
     </div>
@@ -86,10 +85,11 @@ function LogoRow({ reverse = false }: { reverse?: boolean }) {
 }
 
 export function Ticker() {
+  const isMobile = useIsMobile()
   return (
-    <div style={{ padding: '8px 0 24px', display: 'flex', flexDirection: 'column', gap: 8, userSelect: 'none' }}>
-      <LogoRow reverse={false} />
-      <LogoRow reverse={true} />
+    <div style={{ padding: '8px 0 24px', display: 'flex', flexDirection: 'column', gap: isMobile ? 0 : 8, userSelect: 'none' }}>
+      <LogoRow reverse={false} isMobile={isMobile} />
+      <LogoRow reverse={true} isMobile={isMobile} />
     </div>
   )
 }
