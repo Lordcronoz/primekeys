@@ -36,8 +36,8 @@ export const ContainerScroll = ({
       }}
     >
       <div style={{ paddingTop: isMobile ? '40px' : '160px', paddingBottom: isMobile ? '40px' : '160px', width: '100%', position: 'relative', perspective: '1000px' }}>
-        <Header translate={translate} titleComponent={titleComponent} />
-        <Card rotate={rotate} translate={translate} scale={scale}>
+      <Header translate={translate} titleComponent={titleComponent} />
+        <Card rotate={rotate} translate={translate} scale={scale} isMobile={isMobile}>
           {children}
         </Card>
       </div>
@@ -52,16 +52,19 @@ export const Header = ({ translate, titleComponent }: { translate: MotionValue<n
 );
 
 export const Card = ({
-  rotate, scale, children,
+  rotate, scale, children, isMobile,
 }: {
   rotate: MotionValue<number>;
   scale: MotionValue<number>;
   translate: MotionValue<number>;
   children: React.ReactNode;
+  isMobile?: boolean;
 }) => (
   <motion.div
     style={{
-      rotateX: rotate,
+      // rotateX causes a 3D stacking context on iOS that traps scroll events
+      // Only apply on desktop where it works correctly
+      rotateX: isMobile ? 0 : rotate,
       scale,
       boxShadow: '0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a, 0 233px 65px #00000003',
       maxWidth: '64rem',

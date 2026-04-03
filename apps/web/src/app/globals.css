@@ -366,11 +366,12 @@ html, body {
   }
 }
 
-/* Remove tap highlight on mobile */
-* {
+/* Remove tap highlight on mobile — ONLY on interactive elements, NOT globally */
+a, button, [role="button"] {
   -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
 }
+
+/* Do NOT set -webkit-touch-callout: none globally — it blocks iOS scroll momentum */
 
 /* Better font rendering on mobile */
 body {

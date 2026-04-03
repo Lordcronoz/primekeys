@@ -160,11 +160,25 @@ export function Nav() {
   ]
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
+    // Always clean up — prevents stuck scroll if component unmounts
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
   }, [mobileOpen])
 
-  useEffect(() => { setMobileOpen(false) }, [pathname])
+  useEffect(() => {
+    document.body.style.overflow = ''
+    document.body.style.touchAction = ''
+    setMobileOpen(false)
+  }, [pathname])
 
   return (
     <>
