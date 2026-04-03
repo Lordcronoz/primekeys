@@ -256,8 +256,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <div id="pk-cursor" />
-        <div id="pk-cursor-ring" />
         <AuthProvider>
           <CurrencyProvider>
             <MaintenanceGate>

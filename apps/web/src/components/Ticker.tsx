@@ -41,7 +41,7 @@ const LOGOS = [
   },
 ]
 
-const TRACK = [...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS]
+const TRACK = [...LOGOS, ...LOGOS] // 2x is enough for seamless infinite loop — 4x doubles DOM nodes for no visual benefit
 
 const ICON_COLOR = 'rgba(245, 245, 247, 0.55)' // Off-white, monochrome
 
@@ -73,10 +73,8 @@ function LogoRow({ reverse = false }: { reverse?: boolean }) {
               alignItems: 'center',
               justifyContent: 'center',
               color: ICON_COLOR,
-              transition: 'color 0.25s, opacity 0.25s',
+              opacity: 0.7,
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.color = '#f5f5f7'; (e.currentTarget as HTMLDivElement).style.opacity = '1' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.color = ICON_COLOR; (e.currentTarget as HTMLDivElement).style.opacity = '0.7' }}
             dangerouslySetInnerHTML={{
               __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `),
             }}

@@ -480,6 +480,16 @@ img {
   content-visibility: auto;
 }
 
+/* ── content-visibility: skip off-screen sections ─────────────────────────── */
+/* Tells the browser to not layout/paint sections until they scroll near view.
+   containIntrinsicSize prevents layout shift by reserving approximate height. */
+@media (max-width: 768px) {
+  main > section {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+}
+
 /* ── REDUCE SHADER ANIMATION ON MOBILE ───────────────────────────────────── */
 @media (max-width: 768px) {
   /* Shader canvas — lower opacity on mobile to save GPU */
@@ -915,4 +925,89 @@ img {
   .pk-featured-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════
+   MOBILE PERFORMANCE — CRITICAL GPU COST REDUCERS
+   Consolidated. One block. No duplication.
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* 1. Kill backdrop-filter on glass cards — most GPU-expensive CSS on mobile.
+     Each blurred element requires a full off-screen composited layer + blur pass.
+     Use solid opaque surface instead. */
+  .pk-glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(18, 18, 20, 0.97) !important;
+  }
+
+  /* 2. Kill backdrop-filter on NAV explicitly (nav gets its own reduced blur) */
+  .pk-nav-inner {
+    backdrop-filter: saturate(120%) blur(8px) !important;
+    -webkit-backdrop-filter: saturate(120%) blur(8px) !important;
+  }
+
+  /* 3. Cursor glow — pointless on touch, remove from layout entirely */
+  #pk-cursor, #pk-cursor-ring, #pk-cursor-glow {
+    display: none !important;
+  }
+
+  /* 4. Orb animations — static on mobile (animation=none saves the JS timer
+     and prevents the browser scheduling 60fps rAFs for translate/scale) */
+  .orb-a, .orb-b, .orb-c {
+    animation: none !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  /* 5. Grain animation — static noise texture, just not animated */
+  .pk-grain::after {
+    animation: none !important;
+    opacity: 0.012 !important;
+  }
+
+  /* 6. Box shadows on hover cards — repaint entire stacking context on mobile */
+  .pk-hover:hover {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  .pk-card, .pk-glass {
+    box-shadow: none !important;
+  }
+
+  /* 7. Gold shimmer text — instead of animating background-position,
+     use static gold fill on mobile (saves a GPU texture upload per frame) */
+  .pk-shimmer-text {
+    animation: none !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: #D4AF37 !important;
+    color: #D4AF37 !important;
+    will-change: auto !important;
+  }
+
+  /* 8. Ticker speed — slightly faster loop = fewer frames held in memory */
+  .animate-ticker-left,
+  .animate-ticker-right {
+    animation-duration: 25s !important;
+  }
+
+  /* 9. About page team cards — show hover content on tap not hover */
+  .pk-team-card [data-hover-content] {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+  .pk-team-card [data-hover-hint] {
+    display: none !important;
+  }
+}
+
+/* ── Small phones (375–390px) ───────────────────────────────── */
+@media (max-width: 390px) {
+  body { font-size: 14px; }
+  .pk-nav-logo { font-size: 16px !important; }
+  .pk-store-grid { grid-template-columns: 1fr !important; }
+  .pk-featured-grid { grid-template-columns: 1fr !important; }
 }

@@ -1,12 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { motion, useInView, Variants } from 'framer-motion'
 import { Ticker } from '@/components/Ticker'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { ProductCard } from '@/components/ProductCard'
-import { useEffect } from 'react'
+
+// Detect touch/mobile once at module level — avoids repeated matchMedia calls
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    setMobile(
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(pointer: coarse)').matches ||
+       window.innerWidth <= 768)
+    )
+  }, [])
+  return mobile
+}
 
 // ─── Cursor glow tracker ──────────────────────────────────────────────────────
 function CursorGlow() {
@@ -40,13 +52,15 @@ const staggerItem: Variants = {
 }
 
 // ─── Section reveal wrapper ───────────────────────────────────────────────────
+// On mobile: plain div (zero JS overhead). On desktop: framer-motion reveal.
 function SectionReveal({
-  children, delay = 0, className, style,
+  children, delay = 0, className, style, isMob,
 }: {
-  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties
+  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties; isMob?: boolean
 }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px 0px' })
+  if (isMob) return <div className={className} style={style}>{children}</div>
   return (
     <motion.div ref={ref} initial="hidden" animate={inView ? 'show' : 'hidden'}
       variants={{
@@ -59,9 +73,10 @@ function SectionReveal({
 }
 
 // ─── Staggered grid reveal ────────────────────────────────────────────────────
-function StaggerReveal({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function StaggerReveal({ children, style, isMob }: { children: React.ReactNode; style?: React.CSSProperties; isMob?: boolean }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px 0px' })
+  if (isMob) return <div style={style}>{children}</div>
   return (
     <motion.div ref={ref} initial="hidden" animate={inView ? 'show' : 'hidden'}
       variants={staggerContainer} style={style}
@@ -69,7 +84,8 @@ function StaggerReveal({ children, style }: { children: React.ReactNode; style?:
   )
 }
 
-function StaggerChild({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function StaggerChild({ children, style, isMob }: { children: React.ReactNode; style?: React.CSSProperties; isMob?: boolean }) {
+  if (isMob) return <div style={style}>{children}</div>
   return <motion.div variants={staggerItem} style={style}>{children}</motion.div>
 }
 
@@ -434,6 +450,7 @@ function ReviewForm() {
 export default function Home() {
   const allProducts = useCatalogue()
   const featured = allProducts.slice(0, 4)
+  const isMob = useIsMobile()
 
   return (
     <main style={{ background: '#000', minHeight: '100vh' }}>
@@ -444,25 +461,29 @@ export default function Home() {
       ══════════════════════════════════════════════════ */}
       <div className="pk-grain" style={{ position: 'relative', overflow: 'hidden' }}>
 
-        {/* Floating orbs */}
-        <div className="orb-a" style={{
-          position: 'absolute', top: '10%', left: '15%',
-          width: 600, height: 600, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 70%)',
-          pointerEvents: 'none', willChange: 'transform',
-        }} />
-        <div className="orb-b" style={{
-          position: 'absolute', top: '30%', right: '8%',
-          width: 480, height: 480, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(120,60,220,0.13) 0%, transparent 70%)',
-          pointerEvents: 'none', willChange: 'transform',
-        }} />
-        <div className="orb-c" style={{
-          position: 'absolute', bottom: '5%', left: '40%',
-          width: 360, height: 360, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(60,120,255,0.10) 0%, transparent 70%)',
-          pointerEvents: 'none', willChange: 'transform',
-        }} />
+        {/* Floating orbs — removed from DOM on mobile to eliminate GPU compositor layers */}
+        {!isMob && (
+          <>
+            <div className="orb-a" style={{
+              position: 'absolute', top: '10%', left: '15%',
+              width: 600, height: 600, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div className="orb-b" style={{
+              position: 'absolute', top: '30%', right: '8%',
+              width: 480, height: 480, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(120,60,220,0.13) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div className="orb-c" style={{
+              position: 'absolute', bottom: '5%', left: '40%',
+              width: 360, height: 360, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(60,120,255,0.10) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+          </>
+        )}
 
         {/* Fade to black at bottom */}
         <div style={{
@@ -486,110 +507,92 @@ export default function Home() {
           boxSizing: 'border-box',
         }}>
 
-          {/* Gold badge pill */}
-          <motion.div
-            initial={{ opacity: 0, y: -12, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{
+          {/* Gold badge pill — plain div on mobile, animated on desktop */}
+          {isMob ? (
+            <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
               padding: '6px 16px 6px 10px',
               background: 'rgba(212,175,55,0.08)',
               border: '1px solid rgba(212,175,55,0.25)',
               borderRadius: 980, marginBottom: 28,
-            }}
-          >
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: '#D4AF37', boxShadow: '0 0 6px rgba(212,175,55,0.8)',
-            }} />
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-              S&M Holdings
-            </span>
-          </motion.div>
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37' }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '6px 16px 6px 10px',
+                background: 'rgba(212,175,55,0.08)',
+                border: '1px solid rgba(212,175,55,0.25)',
+                borderRadius: 980, marginBottom: 28,
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37', boxShadow: '0 0 6px rgba(212,175,55,0.8)' }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
+            </motion.div>
+          )}
 
           {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontSize: 'clamp(42px, 7.5vw, 96px)',
-              fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0,
-              color: '#f5f5f7', maxWidth: 980, marginBottom: 10,
-            }}
-          >
-            Premium Subscriptions.
-          </motion.h1>
-          <motion.h1
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontSize: 'clamp(42px, 7.5vw, 96px)',
-              fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0,
-              maxWidth: 980, marginBottom: 28,
-            }}
-          >
-            <span className="pk-shimmer-text">Fraction of the price.</span>
-          </motion.h1>
+          {isMob ? (
+            <>
+              <h1 style={{ fontSize: 'clamp(38px, 10vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}>
+                Premium Subscriptions.
+              </h1>
+              <h1 style={{ fontSize: 'clamp(38px, 10vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}>
+                <span className="pk-shimmer-text">Fraction of the price.</span>
+              </h1>
+            </>
+          ) : (
+            <>
+              <motion.h1
+                initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}
+              >Premium Subscriptions.</motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}
+              ><span className="pk-shimmer-text">Fraction of the price.</span></motion.h1>
+            </>
+          )}
 
           {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontSize: 18, fontWeight: 400, color: '#7a7a80', maxWidth: 500, lineHeight: 1.65, marginBottom: 40 }}
-          >
+          <p style={{ fontSize: isMob ? 16 : 18, fontWeight: 400, color: '#7a7a80', maxWidth: 500, lineHeight: 1.65, marginBottom: 40 }}>
             Netflix, Spotify, ChatGPT Plus &amp; more — up to{' '}
             <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in{' '}
             <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>.
-          </motion.p>
+          </p>
 
           {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.52, ease: [0.22, 1, 0.36, 1] }}
-            style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}
-          >
+          <div style={{ display: 'flex', gap: 12, flexWrap: isMob ? 'nowrap' : 'wrap', justifyContent: 'center', width: isMob ? '100%' : 'auto', flexDirection: isMob ? 'column' : 'row' }}>
             <Link href="/store" style={{
               textDecoration: 'none', height: 54, padding: '0 38px',
               background: 'linear-gradient(135deg, #D4AF37 0%, #C49A20 100%)',
               color: '#000', borderRadius: 980, fontSize: 16, fontWeight: 700,
-              letterSpacing: '-0.01em', transition: 'opacity 0.2s, transform 0.15s, box-shadow 0.2s',
-              display: 'inline-flex', alignItems: 'center', gap: 8,
+              letterSpacing: '-0.01em',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               boxShadow: '0 0 28px rgba(212,175,55,0.25)',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.opacity = '0.9'; el.style.transform = 'scale(1.03)'
-              el.style.boxShadow = '0 0 40px rgba(212,175,55,0.4)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.opacity = '1'; el.style.transform = 'scale(1)'
-              el.style.boxShadow = '0 0 28px rgba(212,175,55,0.25)'
-            }}
-            >
+            }}>
               Explore Store
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </Link>
 
             <a href="#how-it-works" style={{
               textDecoration: 'none', height: 54, padding: '0 38px',
-              background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)',
+              background: 'rgba(255,255,255,0.05)',
               color: '#8a8a90', border: '1px solid rgba(255,255,255,0.10)',
               borderRadius: 980, fontSize: 16, fontWeight: 500,
-              transition: 'border-color 0.25s, color 0.25s, background 0.25s',
-              display: 'inline-flex', alignItems: 'center',
-            }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(212,175,55,0.4)'; el.style.color = '#f5f5f7'; el.style.background = 'rgba(212,175,55,0.06)' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(255,255,255,0.10)'; el.style.color = '#8a8a90'; el.style.background = 'rgba(255,255,255,0.05)' }}
-            >
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}>
               How it works ↓
             </a>
-          </motion.div>
+          </div>
         </div>
 
         {/* ── TICKER ─────────────────────────────────────────── */}
@@ -606,18 +609,18 @@ export default function Home() {
       ══════════════════════════════════════════════════ */}
       <section style={{ padding: '72px 24px 80px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
-          <SectionReveal style={{ marginBottom: 12, textAlign: 'center' }}>
+          <SectionReveal isMob={isMob} style={{ marginBottom: 12, textAlign: 'center' }}>
             <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase' }}>
               Trusted by thousands
             </p>
           </SectionReveal>
 
-          <StaggerReveal style={{
+          <StaggerReveal isMob={isMob} style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 12, marginTop: 28,
           }}>
-            <StaggerChild>
+            <StaggerChild isMob={isMob}>
               <StatCard value="10K+" label="Happy customers" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -625,21 +628,21 @@ export default function Home() {
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild>
+            <StaggerChild isMob={isMob}>
               <StatCard value="&lt;5 min" label="Average delivery time" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild>
+            <StaggerChild isMob={isMob}>
               <StatCard value="80%" label="Savings vs official price" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild>
+            <StaggerChild isMob={isMob}>
               <StatCard value="100%" label="Official accounts" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="m9 12 2 2 4-4"/><path d="M12 1a11 11 0 1 0 0 22A11 11 0 0 0 12 1z"/>
@@ -658,7 +661,7 @@ export default function Home() {
       ══════════════════════════════════════════════════ */}
       <section style={{ padding: '80px 24px 100px', maxWidth: 1080, margin: '0 auto' }}>
 
-        <SectionReveal style={{ textAlign: 'center', marginBottom: 64 }}>
+        <SectionReveal isMob={isMob} style={{ textAlign: 'center', marginBottom: 64 }}>
           <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
             Most popular
           </p>
@@ -673,30 +676,26 @@ export default function Home() {
           </p>
         </SectionReveal>
 
-        <StaggerReveal style={{
+        <StaggerReveal isMob={isMob} style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           gap: 16,
         }}>
           {featured.map(product => (
-            <StaggerChild key={product.id}>
+            <StaggerChild isMob={isMob} key={product.id}>
               <ProductCard product={product} />
             </StaggerChild>
           ))}
         </StaggerReveal>
 
-        <SectionReveal delay={0.1} style={{ textAlign: 'center', marginTop: 52 }}>
+        <SectionReveal isMob={isMob} delay={0.1} style={{ textAlign: 'center', marginTop: 52 }}>
           <Link href="/store" style={{
             textDecoration: 'none', height: 48, padding: '0 32px',
             background: 'rgba(255,255,255,0.05)',
             color: '#8a8a90', border: '1px solid rgba(255,255,255,0.09)',
             borderRadius: 980, fontSize: 14, fontWeight: 500,
             display: 'inline-flex', alignItems: 'center', gap: 8,
-            transition: 'border-color 0.2s, color 0.2s',
-          }}
-          onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(212,175,55,0.35)'; el.style.color = '#f5f5f7' }}
-          onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'rgba(255,255,255,0.09)'; el.style.color = '#8a8a90' }}
-          >
+          }}>
             View all 9 subscriptions →
           </Link>
         </SectionReveal>
@@ -711,7 +710,7 @@ export default function Home() {
       <section id="how-it-works" style={{ padding: '100px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
 
-          <SectionReveal style={{ textAlign: 'center', marginBottom: 72 }}>
+          <SectionReveal isMob={isMob} style={{ textAlign: 'center', marginBottom: 72 }}>
             <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
               How it works
             </p>
@@ -724,7 +723,7 @@ export default function Home() {
             <p style={{ fontSize: 18, color: '#6e6e73' }}>No accounts needed. No complicated setups.</p>
           </SectionReveal>
 
-          <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          <StaggerReveal isMob={isMob} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
             {[
               {
                 n: '01', icon: <IconBrowse />, title: 'Pick your plan',
@@ -739,20 +738,20 @@ export default function Home() {
                 body: 'Your official credentials are sent directly to your WhatsApp in under 5 minutes.',
               },
             ].map(({ n, icon, title, body }) => (
-              <StaggerChild key={n}>
-                <div className="pk-hover" style={{
+              <StaggerChild isMob={isMob} key={n}>
+                <div style={{
                   background: '#111',
                   borderRadius: 22, padding: '32px 28px',
                   border: '1px solid rgba(255,255,255,0.06)',
                   height: '100%', position: 'relative', overflow: 'hidden',
                 }}>
-                  {/* corner glow */}
-                  <div style={{
+                  {/* corner glow — skip on mobile */}
+                  {!isMob && <div style={{
                     position: 'absolute', top: -40, right: -40,
                     width: 140, height: 140, borderRadius: '50%',
                     background: 'radial-gradient(circle, rgba(212,175,55,0.07), transparent 70%)',
                     pointerEvents: 'none',
-                  }} />
+                  }} />}
                   <StepIcon>{icon}</StepIcon>
                   <p style={{ fontSize: 10, fontWeight: 800, color: '#D4AF37', letterSpacing: '0.18em', marginBottom: 12, textTransform: 'uppercase' }}>{n}</p>
                   <h3 style={{ fontSize: 20, fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.025em', marginBottom: 12 }}>{title}</h3>
