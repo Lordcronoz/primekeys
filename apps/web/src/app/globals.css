@@ -1011,3 +1011,38 @@ img {
   .pk-store-grid { grid-template-columns: 1fr !important; }
   .pk-featured-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ═══════════════════════════════════════════════════
+   CHROME MOBILE SCROLLING FIX
+   Ensures smooth scrolling on mobile Chrome
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) and (hover: none) {
+  /* Allow native scroll momentum on mobile */
+  html, body {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Prevent touch-action from blocking scroll */
+  * {
+    touch-action: auto !important;
+  }
+
+  /* Allow touch events on interactive elements */
+  button, a, [role="button"], input, textarea, select {
+    touch-action: manipulation !important;
+  }
+
+  /* Ensure main content is scrollable */
+  main {
+    touch-action: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Fix for Chrome's aggressive touch-action defaults */
+  body {
+    touch-action: pan-y !important;
+    overscroll-behavior-y: auto !important;
+  }
+}

@@ -81,7 +81,7 @@ export const BackgroundGradientAnimation = ({
         "h-screen w-screen relative overflow-hidden top-0 left-0 bg-[linear-gradient(40deg,var(--gradient-background-start),var(--gradient-background-end))]",
         containerClassName,
       )}
-      style={{ touchAction: 'pan-y' }}
+      style={{ touchAction: 'pan-y', WebkitUserSelect: 'none', userSelect: 'none' }}
     >
       <svg className="hidden">
         <defs>
@@ -153,7 +153,7 @@ export const BackgroundGradientAnimation = ({
           <div
             ref={interactiveRef}
             onMouseMove={handleMouseMove}
-            style={{ pointerEvents: 'none', touchAction: 'none' }}
+            style={{ pointerEvents: 'none', touchAction: 'auto' }}
             className={cn(
               `absolute [background:radial-gradient(circle_at_center,_rgba(var(--pointer-color),_0.8)_0,_rgba(var(--pointer-color),_0)_50%)_no-repeat]`,
               `[mix-blend-mode:var(--blending-value)] w-full h-full -top-1/2 -left-1/2`,

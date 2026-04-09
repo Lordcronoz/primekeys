@@ -40,10 +40,12 @@ export default function Preloader({ onComplete }: { onComplete?: () => void }) {
   useEffect(() => {
     setDim({ w: window.innerWidth, h: window.innerHeight })
     // Lock scroll during preloader, restore on unmount
+    const originalOverflow = document.body.style.overflow
+    const originalTouchAction = document.body.style.touchAction
     document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      document.body.style.overflow = originalOverflow
+      document.body.style.touchAction = originalTouchAction
     }
   }, [])
 

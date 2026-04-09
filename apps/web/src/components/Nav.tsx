@@ -161,8 +161,12 @@ export function Nav() {
 
   useEffect(() => {
     if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
+      // Lock scroll only on mobile devices
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        document.body.style.overflow = 'hidden'
+        // Use 'manipulation' instead of 'none' to allow pinch-zoom on iOS
+        document.body.style.touchAction = 'manipulation'
+      }
     } else {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
@@ -175,10 +179,19 @@ export function Nav() {
   }, [mobileOpen])
 
   useEffect(() => {
+    // Reset scroll lock when route changes
     document.body.style.overflow = ''
     document.body.style.touchAction = ''
     setMobileOpen(false)
   }, [pathname])
+
+  // Emergency cleanup on unmount to prevent stuck scroll
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
+  }, [])
 
   return (
     <>
