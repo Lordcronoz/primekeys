@@ -160,18 +160,16 @@ export function Nav() {
   ]
 
   useEffect(() => {
-    if (mobileOpen) {
-      // Lock scroll only on mobile devices
-      if (window.matchMedia('(pointer: coarse)').matches) {
-        document.body.style.overflow = 'hidden'
-        // Use 'manipulation' instead of 'none' to allow pinch-zoom on iOS
-        document.body.style.touchAction = 'manipulation'
-      }
+    const isTouch = window.matchMedia('(pointer: coarse)').matches
+    if (mobileOpen && isTouch) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
+      // Force a re-layout to ensure Chrome respects the overflow change
+      window.dispatchEvent(new Event('resize'))
     } else {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
     }
-    // Always clean up — prevents stuck scroll if component unmounts
     return () => {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
@@ -180,17 +178,24 @@ export function Nav() {
 
   useEffect(() => {
     // Reset scroll lock when route changes
-    document.body.style.overflow = ''
-    document.body.style.touchAction = ''
-    setMobileOpen(false)
+    const reset = () => {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+      setMobileOpen(false)
+    }
+    reset()
+    // Small delay to catch any late-firing locks during navigation
+    const t = setTimeout(reset, 100)
+    return () => clearTimeout(t)
   }, [pathname])
 
   // Emergency cleanup on unmount to prevent stuck scroll
   useEffect(() => {
-    return () => {
+    const cleanup = () => {
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
     }
+    return cleanup
   }, [])
 
   return (

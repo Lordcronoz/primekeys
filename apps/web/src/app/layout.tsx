@@ -230,6 +230,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN">
       <head>
+        {/* Emergency scroll-reset for mobile Chrome */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window !== 'undefined') {
+                  var resetScroll = function() {
+                    if (document.body) {
+                      document.body.style.overflow = 'auto';
+                      document.body.style.touchAction = 'auto';
+                    }
+                    if (document.documentElement) {
+                      document.documentElement.style.overflow = 'auto';
+                    }
+                  };
+                  window.addEventListener('load', resetScroll);
+                  // Also reset periodically for the first few seconds to catch race conditions
+                  setTimeout(resetScroll, 1000);
+                  setTimeout(resetScroll, 3000);
+                  setTimeout(resetScroll, 5000);
+                }
+              })();
+            `,
+          }}
+        />
         {/* Preconnect to key origins for performance & Core Web Vitals */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://cdn.simpleicons.org" crossOrigin="" />

@@ -171,34 +171,30 @@ textarea {
 /* ─── Dual-row Ticker ───────────────────────────────────── */
 @keyframes ticker-left {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
-
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
 @keyframes ticker-right {
   from {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
-
   to {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 .animate-ticker-left {
   animation: ticker-left 40s linear infinite;
   will-change: transform;
-  transform: translateZ(0);
 }
 
 .animate-ticker-right {
   animation: ticker-right 40s linear infinite;
   will-change: transform;
-  transform: translateZ(0);
 }
 
 /* ─── Page transitions ───────────────────────────────────── */
@@ -1044,5 +1040,14 @@ img {
   body {
     touch-action: pan-y !important;
     overscroll-behavior-y: auto !important;
+    height: auto !important;
+    position: relative !important;
+  }
+
+  /* Force scrollable container if body is blocked */
+  #__next, [data-nextjs-scroll-focus-boundary] {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh !important;
   }
 }
