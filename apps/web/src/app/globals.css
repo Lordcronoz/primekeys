@@ -1047,7 +1047,6 @@ img {
   /* Force scrollable container if body is blocked */
   #__next, [data-nextjs-scroll-focus-boundary] {
     overflow-y: auto !important;
-    height: auto !important;
-    min-height: 100vh !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }

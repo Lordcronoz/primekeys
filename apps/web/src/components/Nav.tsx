@@ -160,11 +160,10 @@ export function Nav() {
   ]
 
   useEffect(() => {
-    const isTouch = window.matchMedia('(pointer: coarse)').matches
-    if (mobileOpen && isTouch) {
+    const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768
+    if (mobileOpen && isMobile) {
       document.body.style.overflow = 'hidden'
       document.body.style.touchAction = 'none'
-      // Force a re-layout to ensure Chrome respects the overflow change
       window.dispatchEvent(new Event('resize'))
     } else {
       document.body.style.overflow = ''

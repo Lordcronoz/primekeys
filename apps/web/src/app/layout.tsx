@@ -236,6 +236,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               (function() {
                 if (typeof window !== 'undefined') {
+                  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.matchMedia('(pointer: coarse)').matches;
+                  if (!isMobile) return;
+                  
                   var resetScroll = function() {
                     if (document.body) {
                       document.body.style.overflow = 'auto';
@@ -246,7 +249,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     }
                   };
                   window.addEventListener('load', resetScroll);
-                  // Also reset periodically for the first few seconds to catch race conditions
                   setTimeout(resetScroll, 1000);
                   setTimeout(resetScroll, 3000);
                   setTimeout(resetScroll, 5000);
