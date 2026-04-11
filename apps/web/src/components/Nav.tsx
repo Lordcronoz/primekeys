@@ -160,42 +160,22 @@ export function Nav() {
   ]
 
   useEffect(() => {
-    const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768
-    if (mobileOpen && isMobile) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
-      window.dispatchEvent(new Event('resize'))
+    // We no longer manually lock scroll here to avoid modern mobile Chrome bugs.
+    // Scrolling is now handled via global CSS classes for maximum reliability.
+    if (mobileOpen) {
+      document.documentElement.classList.add('mobile-menu-open')
     } else {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      document.documentElement.classList.remove('mobile-menu-open')
     }
     return () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      document.documentElement.classList.remove('mobile-menu-open')
     }
   }, [mobileOpen])
 
   useEffect(() => {
-    // Reset scroll lock when route changes
-    const reset = () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
-      setMobileOpen(false)
-    }
-    reset()
-    // Small delay to catch any late-firing locks during navigation
-    const t = setTimeout(reset, 100)
-    return () => clearTimeout(t)
+    setMobileOpen(false)
+    document.documentElement.classList.remove('mobile-menu-open')
   }, [pathname])
-
-  // Emergency cleanup on unmount to prevent stuck scroll
-  useEffect(() => {
-    const cleanup = () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
-    }
-    return cleanup
-  }, [])
 
   return (
     <>

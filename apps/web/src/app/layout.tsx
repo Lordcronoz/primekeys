@@ -240,12 +240,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   if (!isMobile) return;
                   
                   var resetScroll = function() {
-                    if (document.body) {
-                      document.body.style.overflow = 'auto';
-                      document.body.style.touchAction = 'auto';
-                    }
                     if (document.documentElement) {
-                      document.documentElement.style.overflow = 'auto';
+                      document.documentElement.classList.remove('mobile-menu-open');
+                      document.documentElement.classList.remove('preloader-active');
+                    }
+                    if (document.body) {
+                      document.body.style.overflow = '';
+                      document.body.style.touchAction = '';
+                      document.body.style.position = '';
+                      document.body.style.height = '';
                     }
                   };
                   window.addEventListener('load', resetScroll);
