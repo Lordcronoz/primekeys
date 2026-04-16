@@ -7,12 +7,11 @@ import { useCurrency } from '@/context/CurrencyContext'
 import { REGIONS, CURRENCIES, REGION_TO_CURRENCY } from '@primekeys/shared'
 import { useState, useRef, useEffect } from 'react'
 import { useScroll } from '@/components/ui/use-scroll'
-import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import { UserProfileDropdown } from '@/components/ui/user-profile-dropdown'
 import { MessageSquare, Settings, LogOut, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-function CurrencyPicker() {
+export function CurrencyPicker() {
   const { region, currencyCode, setRegion } = useCurrency()
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -63,7 +62,6 @@ function CurrencyPicker() {
           boxShadow: '0 20px 60px rgba(0,0,0,0.7)', zIndex: 9999,
           overflow: 'hidden',
         }}>
-          {/* Search */}
           <div style={{
             padding: '10px 10px 6px',
             position: 'sticky', top: 0,
@@ -86,7 +84,6 @@ function CurrencyPicker() {
             />
           </div>
 
-          {/* List */}
           <div style={{ maxHeight: 240, overflowY: 'auto', overflowX: 'hidden', padding: '4px 6px 8px' }}>
             {filtered.length === 0 ? (
               <div style={{ padding: 16, textAlign: 'center', color: '#555', fontSize: 12 }}>No results</div>
@@ -130,10 +127,8 @@ function CurrencyPicker() {
 
 export function Nav() {
   const pathname = usePathname()
-  const { user, isTeam } = useAuth()
+  const { user, isTeam, signOut } = useAuth()
   const scrolled = useScroll(40)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const { signOut } = useAuth()
   const router = useRouter()
 
   const dropdownActions = [
@@ -159,175 +154,71 @@ export function Nav() {
     ...(isTeam   ? [{ href: '/portal/admin', label: 'Admin'      }] : []),
   ]
 
-  useEffect(() => {
-    // We no longer manually lock scroll here to avoid modern mobile Chrome bugs.
-    // Scrolling is now handled via global CSS classes for maximum reliability.
-    if (mobileOpen) {
-      document.documentElement.classList.add('mobile-menu-open')
-    } else {
-      document.documentElement.classList.remove('mobile-menu-open')
-    }
-    return () => {
-      document.documentElement.classList.remove('mobile-menu-open')
-    }
-  }, [mobileOpen])
-
-  useEffect(() => {
-    setMobileOpen(false)
-    document.documentElement.classList.remove('mobile-menu-open')
-  }, [pathname])
-
   return (
-    <>
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+    <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      transition: 'all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
+      ...(scrolled ? {
+        padding: '8px 24px',
+        display: 'flex', justifyContent: 'center',
+      } : { padding: 0 }),
+    }}>
+      <div className="pk-nav-inner" style={{
+        width: '100%',
+        height: scrolled ? 44 : 52,
+        background: scrolled ? 'rgba(10,10,12,0.88)' : 'rgba(0,0,0,0.88)',
+        backdropFilter: 'saturate(180%) blur(8px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(8px)',
+        borderBottom: scrolled ? 'none' : '1px solid rgba(255,255,255,0.06)',
+        border: scrolled ? '1px solid rgba(255,255,255,0.1)' : undefined,
+        borderRadius: scrolled ? 980 : 0,
+        boxShadow: scrolled ? '0 8px 40px rgba(0,0,0,0.5)' : 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 20px', boxSizing: 'border-box',
         transition: 'all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
-        ...(scrolled && !mobileOpen ? {
-          padding: '8px 24px',
-          display: 'flex', justifyContent: 'center',
-        } : { padding: 0 }),
       }}>
-        <div className="pk-nav-inner" style={{
-          width: '100%',
-          height: scrolled && !mobileOpen ? 44 : 52,
-          background: scrolled && !mobileOpen
-            ? 'rgba(10,10,12,0.88)'
-            : mobileOpen ? 'rgba(0,0,0,0.98)' : 'rgba(0,0,0,0.88)',
-          backdropFilter: 'saturate(180%) blur(8px)',
-          WebkitBackdropFilter: 'saturate(180%) blur(8px)',
-          borderBottom: scrolled && !mobileOpen ? 'none' : '1px solid rgba(255,255,255,0.06)',
-          border: scrolled && !mobileOpen ? '1px solid rgba(255,255,255,0.1)' : undefined,
-          borderRadius: scrolled && !mobileOpen ? 980 : 0,
-          boxShadow: scrolled && !mobileOpen ? '0 8px 40px rgba(0,0,0,0.5)' : 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 20px', boxSizing: 'border-box',
-          transition: 'all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)',
-        }}>
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ color: '#D4AF37', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>PRIME</span>
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>KEYS</span>
+        </Link>
 
-          {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ color: '#D4AF37', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>PRIME</span>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>KEYS</span>
-          </Link>
-
-          {/* Desktop center links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
-            className="hidden-mobile">
-            {links.map(link => (
-              <Link key={link.href} href={link.href} style={{
-                textDecoration: 'none', fontSize: 13, fontWeight: 400,
-                color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.5)',
-                transition: 'color 0.2s', letterSpacing: '-0.01em',
-              }}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <CurrencyPicker />
-
-            <div style={{ display: 'flex' }} className="hidden-mobile">
-              {!user ? (
-                <Link href="/auth" style={{
-                  textDecoration: 'none', fontSize: 13, fontWeight: 400,
-                  color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em',
-                }}>
-                  Sign In
-                </Link>
-              ) : (
-                <UserProfileDropdown
-                  user={{
-                    name: user.displayName || user.email?.split('@')[0] || 'User',
-                    handle: `@${user.email?.split('@')[0] || 'user'}`,
-                    avatarUrl: user.photoURL || '',
-                  }}
-                  actions={dropdownActions}
-                  menuItems={dropdownMenu}
-                  onSignOut={async () => { await signOut(); router.push('/') }}
-                />
-              )}
-            </div>
-
-            <button
-              onClick={() => setMobileOpen(o => !o)}
-              style={{
-                display: 'none', width: 32, height: 32,
-                alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8, cursor: 'pointer', color: '#f5f5f7',
-              }}
-              className="show-mobile"
-            >
-              <MenuToggleIcon open={mobileOpen} style={{ width: 18, height: 18 }} duration={300} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile menu */}
-      <div style={{
-        position: 'fixed', top: 52, left: 0, right: 0, bottom: 0, zIndex: 99,
-        background: 'rgba(0,0,0,0.97)',
-        display: 'flex', flexDirection: 'column',
-        padding: '24px 28px 48px',
-        transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
-        opacity: mobileOpen ? 1 : 0,
-        transform: mobileOpen ? 'translateY(0)' : 'translateY(-12px)',
-        pointerEvents: mobileOpen ? 'all' : 'none',
-      }} className="show-mobile">
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           {links.map(link => (
             <Link key={link.href} href={link.href} style={{
-              textDecoration: 'none', fontSize: 28, fontWeight: 700,
-              color: isActive(link.href) ? '#f5f5f7' : 'rgba(255,255,255,0.3)',
-              letterSpacing: '-0.03em', padding: '10px 0',
-              transition: 'color 0.2s',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              textDecoration: 'none', fontSize: 13, fontWeight: 400,
+              color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.5)',
+              transition: 'color 0.2s', letterSpacing: '-0.01em',
             }}>
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <CurrencyPicker />
-          {!user ? (
-            <Link href="/auth" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              height: 52, borderRadius: 14, textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.15)',
-              color: '#f5f5f7', fontSize: 16, fontWeight: 600,
-            }}>
-              Sign In
-            </Link>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#6e6e73', fontSize: 13 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'rgba(212,175,55,0.15)',
-                border: '1px solid rgba(212,175,55,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#D4AF37', fontSize: 13, fontWeight: 700,
+          <div style={{ display: 'flex' }}>
+            {!user ? (
+              <Link href="/auth" style={{
+                textDecoration: 'none', fontSize: 13, fontWeight: 400,
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em',
               }}>
-                {user.email?.charAt(0).toUpperCase()}
-              </div>
-              {user.email}
-            </div>
-          )}
+                Sign In
+              </Link>
+            ) : (
+              <UserProfileDropdown
+                user={{
+                  name: user.displayName || user.email?.split('@')[0] || 'User',
+                  handle: `@${user.email?.split('@')[0] || 'user'}`,
+                  avatarUrl: user.photoURL || '',
+                }}
+                actions={dropdownActions}
+                menuItems={dropdownMenu}
+                onSignOut={async () => { await signOut(); router.push('/') }}
+              />
+            )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        .hidden-mobile { display: flex !important; }
-        .show-mobile   { display: none  !important; }
-        @media (max-width: 768px) {
-          .hidden-mobile { display: none  !important; }
-          .show-mobile   { display: flex  !important; }
-        }
-      `}</style>
-    </>
+    </header>
   )
 }

@@ -1033,11 +1033,11 @@ body {
 }
 
 /* Specific fix for modern mobile Chrome/iOS scroll-locking bugs */
+/* We use overflow: hidden on html/body but avoid position: fixed which causes scroll-reset bugs in Chrome */
 html.mobile-menu-open, 
 html.preloader-active {
   overflow: hidden !important;
   height: 100% !important;
-  position: fixed !important;
   width: 100% !important;
 }
 
@@ -1045,7 +1045,6 @@ html.mobile-menu-open body,
 html.preloader-active body {
   overflow: hidden !important;
   height: 100% !important;
-  position: fixed !important;
   width: 100% !important;
   touch-action: none !important;
 }

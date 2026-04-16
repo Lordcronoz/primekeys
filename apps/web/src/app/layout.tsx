@@ -230,36 +230,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN">
       <head>
-        {/* Emergency scroll-reset for mobile Chrome */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                if (typeof window !== 'undefined') {
-                  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.matchMedia('(pointer: coarse)').matches;
-                  if (!isMobile) return;
-                  
-                  var resetScroll = function() {
-                    if (document.documentElement) {
-                      document.documentElement.classList.remove('mobile-menu-open');
-                      document.documentElement.classList.remove('preloader-active');
-                    }
-                    if (document.body) {
-                      document.body.style.overflow = '';
-                      document.body.style.touchAction = '';
-                      document.body.style.position = '';
-                      document.body.style.height = '';
-                    }
-                  };
-                  window.addEventListener('load', resetScroll);
-                  setTimeout(resetScroll, 1000);
-                  setTimeout(resetScroll, 3000);
-                  setTimeout(resetScroll, 5000);
-                }
-              })();
-            `,
-          }}
-        />
+
         {/* Preconnect to key origins for performance & Core Web Vitals */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://cdn.simpleicons.org" crossOrigin="" />
