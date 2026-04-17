@@ -79,7 +79,7 @@ const catIcons: Record<string, React.ReactNode> = {
 export default function StorePage() {
   const isMob = useIsMobile()
   const [active, setActive] = useState('all')
-  const { products: allProducts } = useCatalogue()
+  const allProducts = useCatalogue()
   const products = active === 'all' ? allProducts : allProducts.filter(p => p.category === active)
 
   if (isMob) return <MobileStorePage products={allProducts} />

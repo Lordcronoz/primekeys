@@ -182,7 +182,7 @@ const IconDeliver = () => (
 
 export default function LandingPage() {
   const isMob = useIsMobile()
-  const { products } = useCatalogue()
+  const products = useCatalogue()
   const featured = useMemo(() => products.filter(p => p.featured).slice(0, 4), [products])
 
   if (isMob) return <MobilePage featured={featured} />
