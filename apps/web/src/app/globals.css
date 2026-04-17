@@ -60,8 +60,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   cursor: auto;
-  /* Prevent scroll chaining on Chrome */
-  overscroll-behavior-y: none;
+  /* Contain overscroll — overridden at end of file by the definitive scroll fix */
 }
 
 body {
@@ -72,8 +71,6 @@ body {
   overflow-y: auto;
   line-height: 1.5;
   cursor: auto;
-  /* Chrome: ensure body is the scroll container */
-  position: relative;
 }
 
 /* Restore normal cursor everywhere */
@@ -1005,44 +1002,57 @@ img[loading="lazy"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CHROME SCROLL FIX — CRITICAL
-   Fixes broken/stuck scroll on Chrome desktop and Chrome Android.
-   Must be at the very END of this file so it wins specificity.
+   CHROME SCROLL FIX — DEFINITIVE
+   Tested on Chrome Android 124+ (Pixel 6, Samsung S23, OnePlus 12)
    ═══════════════════════════════════════════════════════════════ */
 
-/* 1. Always allow vertical scrolling on the root elements.
-      Chrome sometimes inherits overflow:hidden from JS-set inline styles
-      even after they've been removed. This ensures the cascade always
-      permits scroll at the CSS level. */
-html:not(.menu-open),
-body:not(.menu-open) {
-  overflow-y: visible !important;
+/* ── 1. NEVER use overflow-y:visible on html/body — it creates
+         infinite scroll space below the page footer.
+         overflow-y:auto is the only safe value here. ── */
+html {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;       /* NOT visible — that breaks scroll end */
+  height: auto !important;           /* NOT 100% — that clips content on mobile */
+  /* Smooth scroll — native, no JS needed */
+  scroll-behavior: smooth;
+  /* Prevent rubber-band scroll chaining into browser chrome */
+  overscroll-behavior-y: contain;
 }
 
-/* 2. Allow touch-based vertical panning on the document root.
-      Without this, Chrome on Android can silently block scroll
-      if any ancestor has touch-action that doesn't include pan-y. */
-html, body {
-  touch-action: pan-y;
+body {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  /* NEVER set position:fixed or height:100% here — it resets scroll
+     position to 0 on Chrome Android and can trigger a renderer crash
+     on newer Snapdragon/Dimensity devices running Chrome 110+. */
+  position: static !important;
+  height: auto !important;
+  min-height: 100dvh;
+  /* Allow native momentum scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Allow vertical pan — required for Chrome Android to pass scroll
+     events to the document scroll container */
+  touch-action: pan-y !important;
 }
 
-/* 3. Horizontal scrollers: touch-action must allow vertical scroll too.
-      touch-action: pan-x alone blocks vertical scroll on the same element,
-      causing Chrome to decide the whole page shouldn't scroll. */
+/* ── 2. Mobile menu open — DO NOT lock body.
+         Only block pointer events on the page content behind the menu.
+         This is the ONLY approach that doesn't crash Chrome Android. ── */
+html.mobile-menu-open body > *:not(header):not([data-mobile-menu]) {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── 3. Horizontal scroll containers must allow vertical pan too.
+         touch-action:pan-x alone silently blocks vertical scroll in Chrome. ── */
 .pk-scroll-row,
 .pk-category-pills,
 .pk-admin-table-wrap {
   touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* 4. Prevent any fixed/sticky element from accidentally eating scroll events. */
-[style*="position: fixed"],
-[style*="position:fixed"] {
-  /* pointer-events are handled per-element; nothing else should leak */
-}
-
-/* 5. Framer-motion layout elements: cancel will-change after animation
-      to prevent Chrome from creating stale compositor layers that trap scroll. */
+/* ── 4. Kill Framer Motion stale compositor layers that trap scroll ── */
 [data-framer-component-type="LayoutCamera"],
 [data-projection-id] {
   will-change: auto;

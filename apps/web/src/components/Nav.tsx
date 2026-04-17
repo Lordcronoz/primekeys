@@ -157,55 +157,17 @@ export function Nav() {
 
   useEffect(() => {
     const html = document.documentElement
-    const body = document.body
     if (mobileOpen) {
-      // Lock scroll on both html and body — Chrome requires html to be locked
-      const scrollY = window.scrollY
-      html.classList.add('menu-open')
-      html.style.overflow = 'hidden'
-      body.style.overflow = 'hidden'
-      // Preserve scroll position so page doesn't jump when menu opens
-      body.style.top = `-${scrollY}px`
-      body.style.position = 'fixed'
-      body.style.width = '100%'
+      html.classList.add('mobile-menu-open')
     } else {
-      // Restore scroll — get position from body.top before resetting
-      const scrollY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
-      html.classList.remove('menu-open')
-      html.style.overflow = ''
-      body.style.overflow = ''
-      body.style.position = ''
-      body.style.top = ''
-      body.style.width = ''
-      // Restore the scroll position Chrome may have reset
-      if (scrollY) window.scrollTo({ top: scrollY, behavior: 'instant' as ScrollBehavior })
+      html.classList.remove('mobile-menu-open')
     }
-    // Safety net: always clean up on unmount
-    return () => {
-      const savedY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
-      html.classList.remove('menu-open')
-      html.style.overflow = ''
-      body.style.overflow = ''
-      body.style.position = ''
-      body.style.top = ''
-      body.style.width = ''
-      if (savedY) window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior })
-    }
+    return () => { html.classList.remove('mobile-menu-open') }
   }, [mobileOpen])
 
   useEffect(() => {
-    // On route change: close menu and restore scroll
-    const html = document.documentElement
-    const body = document.body
-    const savedY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
-    html.classList.remove('menu-open')
-    html.style.overflow = ''
-    body.style.overflow = ''
-    body.style.position = ''
-    body.style.top = ''
-    body.style.width = ''
-    if (savedY) window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior })
     setMobileOpen(false)
+    document.documentElement.classList.remove('mobile-menu-open')
   }, [pathname])
 
   return (

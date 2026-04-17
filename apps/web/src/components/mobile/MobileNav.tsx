@@ -27,14 +27,14 @@ export function MobileNav() {
   ]
 
   useEffect(() => {
+    const html = document.documentElement
     if (mobileOpen) {
-      document.documentElement.classList.add('mobile-menu-open')
+      html.classList.add('mobile-menu-open')
     } else {
-      document.documentElement.classList.remove('mobile-menu-open')
+      html.classList.remove('mobile-menu-open')
     }
-    return () => {
-      document.documentElement.classList.remove('mobile-menu-open')
-    }
+    // Always clean up — safety net
+    return () => { html.classList.remove('mobile-menu-open') }
   }, [mobileOpen])
 
   useEffect(() => {
