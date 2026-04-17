@@ -130,6 +130,7 @@ export function Nav() {
   const { user, isTeam, signOut } = useAuth()
   const scrolled = useScroll(40)
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const dropdownActions = [
     { icon: MessageSquare, label: 'Support', onClick: () => window.open('https://wa.me/918111956481', '_blank') },
@@ -154,7 +155,6 @@ export function Nav() {
     ...(isTeam   ? [{ href: '/portal/admin', label: 'Admin'      }] : []),
   ]
 
-<<<<<<< HEAD
   useEffect(() => {
     const html = document.documentElement
     const body = document.body
@@ -208,8 +208,6 @@ export function Nav() {
     setMobileOpen(false)
   }, [pathname])
 
-=======
->>>>>>> 279d807586e4ebdc40fac0f0dc0fb19296964aa7
   return (
     <header style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -238,90 +236,9 @@ export function Nav() {
           <span style={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>KEYS</span>
         </Link>
 
-<<<<<<< HEAD
-          {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ color: '#D4AF37', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>PRIME</span>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em' }}>KEYS</span>
-          </Link>
-
-          {/* Desktop center links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
-            className="hidden-mobile">
-            {links.map(link => (
-              <Link key={link.href} href={link.href} style={{
-                textDecoration: 'none', fontSize: 13, fontWeight: 400,
-                color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.5)',
-                transition: 'color 0.2s', letterSpacing: '-0.01em',
-              }}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <CurrencyPicker />
-
-            <div style={{ display: 'flex' }} className="hidden-mobile">
-              {!user ? (
-                <Link href="/auth" style={{
-                  textDecoration: 'none', fontSize: 13, fontWeight: 400,
-                  color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.01em',
-                }}>
-                  Sign In
-                </Link>
-              ) : (
-                <UserProfileDropdown
-                  user={{
-                    name: user.displayName || user.email?.split('@')[0] || 'User',
-                    handle: `@${user.email?.split('@')[0] || 'user'}`,
-                    avatarUrl: user.photoURL || '',
-                  }}
-                  actions={dropdownActions}
-                  menuItems={dropdownMenu}
-                  onSignOut={async () => { await signOut(); router.push('/') }}
-                />
-              )}
-            </div>
-
-            <button
-              onClick={() => setMobileOpen(o => !o)}
-              style={{
-                display: 'none', width: 32, height: 32,
-                alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8, cursor: 'pointer', color: '#f5f5f7',
-              }}
-              className="show-mobile"
-            >
-              <MenuToggleIcon open={mobileOpen} style={{ width: 18, height: 18 }} duration={300} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile menu */}
-      <div style={{
-        position: 'fixed', top: 52, left: 0, right: 0, bottom: 0, zIndex: 99,
-        background: 'rgba(0,0,0,0.97)',
-        display: 'flex', flexDirection: 'column',
-        overflowY: 'auto',
-        padding: '24px 28px 48px',
-        transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
-        opacity: mobileOpen ? 1 : 0,
-        transform: mobileOpen ? 'translateY(0)' : 'translateY(-12px)',
-        // visibility:hidden fully removes from event pipeline on Chrome Android
-        // pointerEvents:none alone is insufficient on some Chrome versions
-        visibility: mobileOpen ? 'visible' : 'hidden',
-        pointerEvents: mobileOpen ? 'all' : 'none',
-        touchAction: mobileOpen ? 'pan-y' : 'none',
-      }} className="show-mobile">
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-=======
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
->>>>>>> 279d807586e4ebdc40fac0f0dc0fb19296964aa7
+        {/* Desktop center links */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 32, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}
+          className="hidden-mobile">
           {links.map(link => (
             <Link key={link.href} href={link.href} style={{
               textDecoration: 'none', fontSize: 13, fontWeight: 400,
@@ -333,9 +250,11 @@ export function Nav() {
           ))}
         </nav>
 
+        {/* Right side */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <CurrencyPicker />
-          <div style={{ display: 'flex' }}>
+
+          <div style={{ display: 'flex' }} className="hidden-mobile">
             {!user ? (
               <Link href="/auth" style={{
                 textDecoration: 'none', fontSize: 13, fontWeight: 400,
@@ -356,6 +275,93 @@ export function Nav() {
               />
             )}
           </div>
+
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            style={{
+              display: 'none', width: 32, height: 32,
+              alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8, cursor: 'pointer', color: '#f5f5f7',
+            }}
+            className="show-mobile"
+          >
+            {/* Hamburger / X icon */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {mobileOpen ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="7" x2="21" y2="7"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="17" x2="21" y2="17"/>
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      <div style={{
+        position: 'fixed', top: 52, left: 0, right: 0, bottom: 0, zIndex: 99,
+        background: 'rgba(0,0,0,0.97)',
+        display: 'flex', flexDirection: 'column',
+        overflowY: 'auto',
+        padding: '24px 28px 48px',
+        transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
+        opacity: mobileOpen ? 1 : 0,
+        transform: mobileOpen ? 'translateY(0)' : 'translateY(-12px)',
+        // visibility:hidden fully removes from event pipeline on Chrome Android
+        // pointerEvents:none alone is insufficient on some Chrome versions
+        visibility: mobileOpen ? 'visible' : 'hidden',
+        pointerEvents: mobileOpen ? 'all' : 'none',
+        touchAction: mobileOpen ? 'pan-y' : 'none',
+      }} className="show-mobile">
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          {links.map(link => (
+            <Link key={link.href} href={link.href} style={{
+              textDecoration: 'none', fontSize: 22, fontWeight: 600,
+              color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.45)',
+              padding: '14px 0',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              letterSpacing: '-0.02em',
+              transition: 'color 0.2s',
+            }}
+              onClick={() => setMobileOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <CurrencyPicker />
+          {!user ? (
+            <Link href="/auth" style={{
+              textDecoration: 'none', fontSize: 14, fontWeight: 500,
+              color: 'rgba(255,255,255,0.6)', letterSpacing: '-0.01em',
+            }}
+              onClick={() => setMobileOpen(false)}
+            >
+              Sign In →
+            </Link>
+          ) : (
+            <UserProfileDropdown
+              user={{
+                name: user.displayName || user.email?.split('@')[0] || 'User',
+                handle: `@${user.email?.split('@')[0] || 'user'}`,
+                avatarUrl: user.photoURL || '',
+              }}
+              actions={dropdownActions}
+              menuItems={dropdownMenu}
+              onSignOut={async () => { await signOut(); router.push('/') }}
+            />
+          )}
         </div>
       </div>
     </header>
