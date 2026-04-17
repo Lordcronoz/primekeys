@@ -176,34 +176,30 @@ textarea {
 /* ─── Dual-row Ticker ───────────────────────────────────── */
 @keyframes ticker-left {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
-
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
 @keyframes ticker-right {
   from {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
-
   to {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 .animate-ticker-left {
-  animation: ticker-left 40s linear infinite;
+  animation: ticker-left 30s linear infinite;
   will-change: transform;
-  transform: translateZ(0);
 }
 
 .animate-ticker-right {
-  animation: ticker-right 40s linear infinite;
+  animation: ticker-right 30s linear infinite;
   will-change: transform;
-  transform: translateZ(0);
 }
 
 /* ─── Page transitions ───────────────────────────────────── */
@@ -1008,6 +1004,7 @@ img[loading="lazy"] {
   .pk-featured-grid { grid-template-columns: 1fr !important; }
 }
 
+<<<<<<< HEAD
 /* ═══════════════════════════════════════════════════════════════
    CHROME SCROLL FIX — CRITICAL
    Fixes broken/stuck scroll on Chrome desktop and Chrome Android.
@@ -1051,3 +1048,69 @@ html, body {
 [data-projection-id] {
   will-change: auto;
 }
+=======
+/* ─── NUCLEAR SCROLLING FIX (All Devices & Chrome Versions) ─── */
+:root {
+  --scroll-behavior: auto;
+}
+
+html {
+  overflow-x: hidden !important;
+  width: 100%;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: var(--scroll-behavior);
+}
+
+body {
+  overflow-x: hidden !important;
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+  touch-action: manipulation !important;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* Specific fix for modern mobile Chrome/iOS scroll-locking bugs */
+/* We use overflow: hidden on html/body but avoid position: fixed which causes scroll-reset bugs in Chrome */
+html.mobile-menu-open, 
+html.preloader-active {
+  overflow: hidden !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+html.mobile-menu-open body,
+html.preloader-active body {
+  overflow: hidden !important;
+  height: 100% !important;
+  width: 100% !important;
+  touch-action: none !important;
+}
+
+/* Restore scrolling when locks are removed */
+html:not(.mobile-menu-open):not(.preloader-active) {
+  overflow-y: auto !important;
+  height: auto !important;
+  position: static !important;
+}
+
+html:not(.mobile-menu-open):not(.preloader-active) body {
+  overflow-y: auto !important;
+  height: auto !important;
+  position: static !important;
+  touch-action: auto !important;
+}
+
+@media (max-width: 768px) {
+  body {
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  main {
+    touch-action: auto !important;
+  }
+}
+>>>>>>> 279d807586e4ebdc40fac0f0dc0fb19296964aa7

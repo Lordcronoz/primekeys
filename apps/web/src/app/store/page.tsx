@@ -5,6 +5,24 @@ import { motion, useInView, AnimatePresence } from 'framer-motion'
 import { CATEGORIES } from '@primekeys/shared'
 import { ProductCard } from '@/components/ProductCard'
 import { useCatalogue } from '@/hooks/useCatalogue'
+import MobileStorePage from './MobileStorePage'
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const check = () => {
+      setMobile(
+        typeof window !== 'undefined' &&
+        (window.matchMedia('(pointer: coarse)').matches ||
+         window.innerWidth <= 768)
+      )
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return mobile
+}
 
 function CursorGlow() {
   useEffect(() => {
@@ -59,11 +77,12 @@ const catIcons: Record<string, React.ReactNode> = {
 }
 
 export default function StorePage() {
+  const isMob = useIsMobile()
   const [active, setActive] = useState('all')
-  const allProducts = useCatalogue()
+  const { products: allProducts } = useCatalogue()
   const products = active === 'all' ? allProducts : allProducts.filter(p => p.category === active)
-  // Only show available products (hide stock out from listing — or show greyed out, your choice)
-  // We show them greyed out so customers know they exist
+
+  if (isMob) return <MobileStorePage products={allProducts} />
 
   return (
     <main style={{ background: '#000', minHeight: '100vh', paddingTop: 52 }}>

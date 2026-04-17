@@ -41,7 +41,8 @@ const LOGOS = [
   },
 ]
 
-const TRACK = [...LOGOS, ...LOGOS]
+// Duplicate multiple times to ensure enough width for infinite scroll
+const TRACK = [...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS]
 
 const ICON_COLOR = 'rgba(245, 245, 247, 0.55)'
 
@@ -54,30 +55,17 @@ function useIsMobile() {
 }
 
 function LogoRow({ reverse = false, isMobile = false }: { reverse?: boolean; isMobile?: boolean }) {
-  if (isMobile) {
-    return (
-      <div style={{ display: 'flex', gap: 28, padding: '10px 24px', alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-        {['Netflix', 'Spotify', 'YouTube', 'ChatGPT', 'Disney+', 'Canva'].map(name => {
-          const logo = LOGOS.find(l => l.name === name)
-          if (!logo) return null
-          return (
-            <div key={name} title={name} style={{ width: 22, height: 22, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ICON_COLOR, opacity: 0.6 }} dangerouslySetInnerHTML={{ __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `) }} />
-          )
-        })}
-      </div>
-    )
-  }
-
+  // Use the same animated ticker for both mobile and desktop for a consistent "infinite" feel
   return (
     <div style={{ overflow: 'hidden', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '100%', background: 'linear-gradient(to right, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '100%', background: 'linear-gradient(to left, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: isMobile ? 60 : 120, background: 'linear-gradient(to right, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: isMobile ? 60 : 120, background: 'linear-gradient(to left, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
       <div
         className={reverse ? 'animate-ticker-right' : 'animate-ticker-left'}
-        style={{ display: 'flex', gap: 36, width: 'max-content', padding: '14px 0', alignItems: 'center' }}
+        style={{ display: 'flex', gap: isMobile ? 24 : 36, width: 'max-content', padding: isMobile ? '8px 0' : '14px 0', alignItems: 'center' }}
       >
         {TRACK.map((logo, i) => (
-          <div key={`${logo.name}-${i}`} title={logo.name} style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ICON_COLOR, opacity: 0.7 }} dangerouslySetInnerHTML={{ __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `) }} />
+          <div key={`${logo.name}-${i}`} title={logo.name} style={{ width: isMobile ? 22 : 28, height: isMobile ? 22 : 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ICON_COLOR, opacity: 0.7 }} dangerouslySetInnerHTML={{ __html: logo.svg.replace('<svg ', `<svg width="100%" height="100%" `) }} />
         ))}
       </div>
     </div>

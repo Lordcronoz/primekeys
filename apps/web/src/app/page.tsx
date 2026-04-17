@@ -6,21 +6,27 @@ import { motion, useInView, Variants } from 'framer-motion'
 import { Ticker } from '@/components/Ticker'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { ProductCard } from '@/components/ProductCard'
+import MobilePage from './MobilePage'
 
-// Detect touch/mobile once at module level — avoids repeated matchMedia calls
+// Detect touch/mobile once at module level
 function useIsMobile() {
   const [mobile, setMobile] = useState(false)
   useEffect(() => {
-    setMobile(
-      typeof window !== 'undefined' &&
-      (window.matchMedia('(pointer: coarse)').matches ||
-       window.innerWidth <= 768)
-    )
+    const check = () => {
+      setMobile(
+        typeof window !== 'undefined' &&
+        (window.matchMedia('(pointer: coarse)').matches ||
+         window.innerWidth <= 768)
+      )
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
   return mobile
 }
 
-// ─── Cursor glow tracker ──────────────────────────────────────────────────────
+// ─── Cursor glow tracker (Desktop Only) ──────────────────────────────────────
 function CursorGlow() {
   useEffect(() => {
     if (window.matchMedia('(pointer: coarse)').matches) return
@@ -51,16 +57,14 @@ const staggerItem: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
 }
 
-// ─── Section reveal wrapper ───────────────────────────────────────────────────
-// On mobile: plain div (zero JS overhead). On desktop: framer-motion reveal.
+// ─── Section reveal wrapper (Desktop Only) ───────────────────────────────────
 function SectionReveal({
-  children, delay = 0, className, style, isMob,
+  children, delay = 0, className, style,
 }: {
-  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties; isMob?: boolean
+  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties
 }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px 0px' })
-  if (isMob) return <div className={className} style={style}>{children}</div>
   return (
     <motion.div ref={ref} initial="hidden" animate={inView ? 'show' : 'hidden'}
       variants={{
@@ -72,11 +76,10 @@ function SectionReveal({
   )
 }
 
-// ─── Staggered grid reveal ────────────────────────────────────────────────────
-function StaggerReveal({ children, style, isMob }: { children: React.ReactNode; style?: React.CSSProperties; isMob?: boolean }) {
+// ─── Staggered grid reveal (Desktop Only) ────────────────────────────────────
+function StaggerReveal({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-60px 0px' })
-  if (isMob) return <div style={style}>{children}</div>
   return (
     <motion.div ref={ref} initial="hidden" animate={inView ? 'show' : 'hidden'}
       variants={staggerContainer} style={style}
@@ -84,8 +87,7 @@ function StaggerReveal({ children, style, isMob }: { children: React.ReactNode; 
   )
 }
 
-function StaggerChild({ children, style, isMob }: { children: React.ReactNode; style?: React.CSSProperties; isMob?: boolean }) {
-  if (isMob) return <div style={style}>{children}</div>
+function StaggerChild({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return <motion.div variants={staggerItem} style={style}>{children}</motion.div>
 }
 
@@ -98,54 +100,6 @@ function Stars({ n = 5 }: { n?: number }) {
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
       ))}
-    </div>
-  )
-}
-
-// ─── Testimonial card ─────────────────────────────────────────────────────────
-function TestimonialCard({
-  quote, name, handle, avatar,
-}: { quote: string; name: string; handle: string; avatar: string }) {
-  return (
-    <div className="pk-glass pk-hover" style={{
-      borderRadius: 20, padding: '28px 28px 24px',
-      position: 'relative', overflow: 'hidden',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {/* subtle gold top border */}
-      <div style={{
-        position: 'absolute', top: 0, left: '15%', right: '15%', height: 1,
-        background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.5), transparent)',
-      }} />
-      <Stars />
-      <p style={{
-        fontSize: 15, color: '#c9c9cc', lineHeight: 1.7,
-        marginTop: 14, marginBottom: 20,
-        fontStyle: 'italic',
-        flex: 1,
-        display: '-webkit-box',
-        WebkitLineClamp: 4,
-        WebkitBoxOrient: 'vertical' as const,
-        overflow: 'hidden',
-      }}>
-        &ldquo;{quote}&rdquo;
-      </p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #D4AF37 0%, #C49A20 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 14, fontWeight: 700, color: '#000', flexShrink: 0,
-        }}>
-          {avatar}
-        </div>
-        <div>
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#f5f5f7' }}>{name}</p>
-          <p style={{ fontSize: 12, color: '#6e6e73' }}>{handle}</p>
-        </div>
-      </div>
     </div>
   )
 }
@@ -226,351 +180,73 @@ const IconDeliver = () => (
   </svg>
 )
 
-// ─── TESTIMONIALS DATA ────────────────────────────────────────────────────────
-const TESTIMONIALS = [
-  {
-    quote: "Got my Netflix credentials in literally 3 minutes. Saved ₹400 compared to the official price. This is legitimately the best deal on the internet.",
-    name: "Arjun Mehta",
-    handle: "@arjunm · Delhi",
-    avatar: "A",
-  },
-  {
-    quote: "Was skeptical at first but decided to try Spotify. Account worked perfectly, delivery via WhatsApp was super fast. Been using it for 6 months now.",
-    name: "Riya Shah",
-    handle: "@riyashah · Mumbai",
-    avatar: "R",
-  },
-  {
-    quote: "ChatGPT Plus for ₹899/mo instead of ₹1900? Crazy value. No setup, no hassle — just works. Told all my college friends.",
-    name: "Karan Verma",
-    handle: "@karanv · Bangalore",
-    avatar: "K",
-  },
-]
-
-// ─── Review form ─────────────────────────────────────────────────────────────
-interface UserReview {
-  name: string; quote: string; stars: number; handle: string; avatar: string;
-}
-
-function ReviewForm() {
-  const [stars, setStars] = useState(5)
-  const [hovered, setHovered] = useState(0)
-  const [name, setName] = useState('')
-  const [msg, setMsg] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [reviews, setReviews] = useState<UserReview[]>([])
-  const [open, setOpen] = useState(false)
-
-  const submit = () => {
-    if (!name.trim() || !msg.trim()) return
-    setReviews(r => [{
-      name: name.trim(),
-      quote: msg.trim(),
-      stars,
-      handle: 'Verified customer',
-      avatar: name.trim()[0].toUpperCase(),
-    }, ...r])
-    setSubmitted(true)
-    setOpen(false)
-    setTimeout(() => { setSubmitted(false); setName(''); setMsg(''); setStars(5) }, 4000)
-  }
-
-  const inputBase: React.CSSProperties = {
-    width: '100%', background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.09)', borderRadius: 12,
-    color: '#f5f5f7', fontSize: 15, padding: '12px 16px',
-    outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box',
-    fontFamily: 'inherit',
-  }
-
-  return (
-    <div style={{ marginTop: 72 }}>
-      {/* New user reviews rendered above the form button */}
-      {reviews.length > 0 && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-          gap: 16, marginBottom: 32,
-        }}>
-          {reviews.map((r, i) => (
-            <motion.div key={i}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <TestimonialCard {...r} />
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Success toast */}
-      {submitted && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          style={{
-            marginBottom: 24, padding: '14px 22px',
-            background: 'rgba(212,175,55,0.1)',
-            border: '1px solid rgba(212,175,55,0.3)',
-            borderRadius: 12, color: '#D4AF37',
-            fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 10,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2.5">
-            <path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10"/>
-          </svg>
-          Thanks for your review! It means everything to us.
-        </motion.div>
-      )}
-
-      {/* Toggle button */}
-      {!open ? (
-        <div style={{ textAlign: 'center' }}>
-          <button onClick={() => setOpen(true)} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '12px 28px', borderRadius: 980,
-            background: 'rgba(212,175,55,0.08)',
-            border: '1px solid rgba(212,175,55,0.25)',
-            color: '#D4AF37', fontSize: 14, fontWeight: 600,
-            cursor: 'pointer', transition: 'background 0.2s, border-color 0.2s',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.14)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(212,175,55,0.08)' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            Leave a review
-          </button>
-        </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="pk-glass"
-          style={{ borderRadius: 20, padding: '36px 32px', maxWidth: 560, margin: '0 auto', position: 'relative' }}
-        >
-          {/* Top accent line */}
-          <div style={{
-            position: 'absolute', top: 0, left: '15%', right: '15%', height: 1,
-            background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.5), transparent)',
-          }} />
-
-          <h3 style={{ fontSize: 20, fontWeight: 700, color: '#f5f5f7', marginBottom: 6, letterSpacing: '-0.025em' }}>
-            Share your experience
-          </h3>
-          <p style={{ fontSize: 14, color: '#6e6e73', marginBottom: 28 }}>Your honest review helps others make great decisions.</p>
-
-          {/* Star picker */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-            {[1,2,3,4,5].map(n => (
-              <button key={n}
-                onClick={() => setStars(n)}
-                onMouseEnter={() => setHovered(n)}
-                onMouseLeave={() => setHovered(0)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, transition: 'transform 0.15s' }}
-                onMouseDown={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.9)'}
-                onMouseUp={e => (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'}
-              >
-                <svg width="28" height="28" viewBox="0 0 24 24"
-                  fill={(hovered || stars) >= n ? '#D4AF37' : 'rgba(255,255,255,0.1)'}
-                  style={{ transition: 'fill 0.15s, filter 0.15s', filter: (hovered || stars) >= n ? 'drop-shadow(0 0 4px rgba(212,175,55,0.6))' : 'none' }}
-                >
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              </button>
-            ))}
-            <span style={{ fontSize: 13, color: '#6e6e73', alignSelf: 'center', marginLeft: 8 }}>
-              {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][hovered || stars]}
-            </span>
-          </div>
-
-          {/* Name field */}
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, color: '#6e6e73', fontWeight: 500, display: 'block', marginBottom: 6 }}>Your name</label>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. Priya S."
-              style={inputBase}
-              onFocus={e => (e.target as HTMLInputElement).style.borderColor = 'rgba(212,175,55,0.4)'}
-              onBlur={e => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.09)'}
-            />
-          </div>
-
-          {/* Message field */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 12, color: '#6e6e73', fontWeight: 500, display: 'block', marginBottom: 6 }}>Your review</label>
-            <textarea
-              value={msg}
-              onChange={e => setMsg(e.target.value)}
-              placeholder="How was your experience?"
-              rows={4}
-              style={{ ...inputBase, resize: 'none', lineHeight: 1.6 }}
-              onFocus={e => (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(212,175,55,0.4)'}
-              onBlur={e => (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(255,255,255,0.09)'}
-            />
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={submit}
-              disabled={!name.trim() || !msg.trim()}
-              style={{
-                flex: 1, height: 46, borderRadius: 12,
-                background: !name.trim() || !msg.trim() ? 'rgba(212,175,55,0.25)' : 'linear-gradient(135deg, #D4AF37 0%, #C49A20 100%)',
-                color: '#000', border: 'none', fontSize: 15, fontWeight: 700,
-                cursor: !name.trim() || !msg.trim() ? 'not-allowed' : 'pointer',
-                transition: 'opacity 0.2s',
-              }}
-            >
-              Post review
-            </button>
-            <button onClick={() => setOpen(false)} style={{
-              height: 46, padding: '0 20px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.09)',
-              color: '#6e6e73', fontSize: 14, cursor: 'pointer',
-              transition: 'color 0.2s',
-            }}>
-              Cancel
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-export default function Home() {
-  const allProducts = useCatalogue()
-  const featured = allProducts.slice(0, 4)
+export default function LandingPage() {
   const isMob = useIsMobile()
+  const { products } = useCatalogue()
+  const featured = useMemo(() => products.filter(p => p.featured).slice(0, 4), [products])
+
+  if (isMob) return <MobilePage featured={featured} />
 
   return (
-    <main style={{ background: '#000', minHeight: '100vh' }}>
+    <main className="pk-grain" style={{ background: '#000', minHeight: '100vh' }}>
       <CursorGlow />
 
       {/* ══════════════════════════════════════════════════
           HERO SECTION
       ══════════════════════════════════════════════════ */}
-      <div className="pk-grain" style={{ position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Background orbs */}
+        <div className="orb-a" style={{ position: 'absolute', top: '-10%', left: '10%', width: '40vw', height: '40vw', background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%)', filter: 'blur(60px)', zIndex: 1 }} />
+        <div className="orb-b" style={{ position: 'absolute', bottom: '10%', right: '5%', width: '35vw', height: '35vw', background: 'radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%)', filter: 'blur(80px)', zIndex: 1 }} />
 
-        {/* Floating orbs — removed from DOM on mobile to eliminate GPU compositor layers */}
-        {!isMob && (
-          <>
-            <div className="orb-a" style={{
-              position: 'absolute', top: '10%', left: '15%',
-              width: 600, height: 600, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(212,175,55,0.14) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-            <div className="orb-b" style={{
-              position: 'absolute', top: '30%', right: '8%',
-              width: 480, height: 480, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(120,60,220,0.13) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-            <div className="orb-c" style={{
-              position: 'absolute', bottom: '5%', left: '40%',
-              width: 360, height: 360, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(60,120,255,0.10) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-          </>
-        )}
-
-        {/* Fade to black at bottom */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '35vh',
-          pointerEvents: 'none', zIndex: 2,
-          background: 'linear-gradient(to bottom, transparent 0%, #000 100%)',
-        }} />
-
-        {/* ── HERO CONTENT ─────────────────────────────────── */}
-        <div className="pk-hero-fullscreen" style={{
-          position: 'relative', zIndex: 3,
-          // calc(100dvh - 48px) accounts for the nav height (main has pt-[48px])
-          // This ensures the content is centered in EXACTLY the visible viewport
-          height: 'calc(100vh - 48px)',
-          minHeight: 'calc(100dvh - 48px)',
+          position: 'relative', zIndex: 2,
+          maxWidth: 1200, margin: '0 auto',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
           textAlign: 'center',
-          // Symmetric padding so flex centering isn't offset
-          padding: '56px 24px 56px',
+          padding: '120px 24px 80px',
           boxSizing: 'border-box',
         }}>
 
-          {/* Gold badge pill — plain div on mobile, animated on desktop */}
-          {isMob ? (
-            <div style={{
+          {/* Gold badge pill */}
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
               padding: '6px 16px 6px 10px',
               background: 'rgba(212,175,55,0.08)',
               border: '1px solid rgba(212,175,55,0.25)',
               borderRadius: 980, marginBottom: 28,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37' }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: -12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7,
-                padding: '6px 16px 6px 10px',
-                background: 'rgba(212,175,55,0.08)',
-                border: '1px solid rgba(212,175,55,0.25)',
-                borderRadius: 980, marginBottom: 28,
-              }}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37', boxShadow: '0 0 6px rgba(212,175,55,0.8)' }} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
-            </motion.div>
-          )}
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37', boxShadow: '0 0 6px rgba(212,175,55,0.8)' }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
+          </motion.div>
 
           {/* Headline */}
-          {isMob ? (
-            <>
-              <h1 style={{ fontSize: 'clamp(38px, 10vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}>
-                Premium Subscriptions.
-              </h1>
-              <h1 style={{ fontSize: 'clamp(38px, 10vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}>
-                <span className="pk-shimmer-text">Fraction of the price.</span>
-              </h1>
-            </>
-          ) : (
-            <>
-              <motion.h1
-                initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}
-              >Premium Subscriptions.</motion.h1>
-              <motion.h1
-                initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}
-              ><span className="pk-shimmer-text">Fraction of the price.</span></motion.h1>
-            </>
-          )}
+          <motion.h1
+            initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}
+          >Premium Subscriptions.</motion.h1>
+          <motion.h1
+            initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}
+          ><span className="pk-shimmer-text">Fraction of the price.</span></motion.h1>
 
           {/* Subheadline */}
-          <p style={{ fontSize: isMob ? 16 : 18, fontWeight: 400, color: '#7a7a80', maxWidth: 500, lineHeight: 1.65, marginBottom: 40 }}>
+          <p style={{ fontSize: 18, fontWeight: 400, color: '#7a7a80', maxWidth: 500, lineHeight: 1.65, marginBottom: 40 }}>
             Netflix, Spotify, ChatGPT Plus &amp; more — up to{' '}
             <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in{' '}
             <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>.
           </p>
 
           {/* CTAs */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: isMob ? 'nowrap' : 'wrap', justifyContent: 'center', width: isMob ? '100%' : 'auto', flexDirection: isMob ? 'column' : 'row' }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <Link href="/store" style={{
               textDecoration: 'none', height: 54, padding: '0 38px',
               background: 'linear-gradient(135deg, #D4AF37 0%, #C49A20 100%)',
@@ -601,26 +277,25 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── GOLD DIVIDER ──────────────────────────────────────── */}
       <hr className="pk-divider" />
 
       {/* ══════════════════════════════════════════════════
           TRUST STATS STRIP
       ══════════════════════════════════════════════════ */}
-      <section style={{ padding: '72px 24px 80px' }}>
+      <section style={{ padding: '100px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
-          <SectionReveal isMob={isMob} style={{ marginBottom: 12, textAlign: 'center' }}>
+          <SectionReveal style={{ marginBottom: 12, textAlign: 'center' }}>
             <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase' }}>
               Trusted by thousands
             </p>
           </SectionReveal>
 
-          <StaggerReveal isMob={isMob} style={{
+          <StaggerReveal style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 12, marginTop: 28,
           }}>
-            <StaggerChild isMob={isMob}>
+            <StaggerChild>
               <StatCard value="10K+" label="Happy customers" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -628,21 +303,21 @@ export default function Home() {
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild isMob={isMob}>
+            <StaggerChild>
               <StatCard value="&lt;5 min" label="Average delivery time" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild isMob={isMob}>
+            <StaggerChild>
               <StatCard value="80%" label="Savings vs official price" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
               } />
             </StaggerChild>
-            <StaggerChild isMob={isMob}>
+            <StaggerChild>
               <StatCard value="100%" label="Official accounts" icon={
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="1.8">
                   <path d="m9 12 2 2 4-4"/><path d="M12 1a11 11 0 1 0 0 22A11 11 0 0 0 12 1z"/>
@@ -653,15 +328,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── GOLD DIVIDER ──────────────────────────────────────── */}
       <hr className="pk-divider" />
 
       {/* ══════════════════════════════════════════════════
           FEATURED PRODUCTS
       ══════════════════════════════════════════════════ */}
-      <section style={{ padding: '80px 24px 100px', maxWidth: 1080, margin: '0 auto' }}>
-
-        <SectionReveal isMob={isMob} style={{ textAlign: 'center', marginBottom: 64 }}>
+      <section style={{ padding: '100px 24px', maxWidth: 1080, margin: '0 auto' }}>
+        <SectionReveal style={{ textAlign: 'center', marginBottom: 64 }}>
           <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
             Most popular
           </p>
@@ -676,19 +349,19 @@ export default function Home() {
           </p>
         </SectionReveal>
 
-        <StaggerReveal isMob={isMob} style={{
+        <StaggerReveal style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           gap: 16,
         }}>
           {featured.map(product => (
-            <StaggerChild isMob={isMob} key={product.id}>
+            <StaggerChild key={product.id}>
               <ProductCard product={product} />
             </StaggerChild>
           ))}
         </StaggerReveal>
 
-        <SectionReveal isMob={isMob} delay={0.1} style={{ textAlign: 'center', marginTop: 52 }}>
+        <SectionReveal delay={0.1} style={{ textAlign: 'center', marginTop: 52 }}>
           <Link href="/store" style={{
             textDecoration: 'none', height: 48, padding: '0 32px',
             background: 'rgba(255,255,255,0.05)',
@@ -696,21 +369,19 @@ export default function Home() {
             borderRadius: 980, fontSize: 14, fontWeight: 500,
             display: 'inline-flex', alignItems: 'center', gap: 8,
           }}>
-            View all 9 subscriptions →
+            View all subscriptions →
           </Link>
         </SectionReveal>
       </section>
 
-      {/* ── GOLD DIVIDER ──────────────────────────────────────── */}
       <hr className="pk-divider" />
 
       {/* ══════════════════════════════════════════════════
           HOW IT WORKS
       ══════════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ padding: '100px 24px' }}>
+      <section id="how-it-works" style={{ padding: '120px 24px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-
-          <SectionReveal isMob={isMob} style={{ textAlign: 'center', marginBottom: 72 }}>
+          <SectionReveal style={{ textAlign: 'center', marginBottom: 72 }}>
             <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
               How it works
             </p>
@@ -723,7 +394,7 @@ export default function Home() {
             <p style={{ fontSize: 18, color: '#6e6e73' }}>No accounts needed. No complicated setups.</p>
           </SectionReveal>
 
-          <StaggerReveal isMob={isMob} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
             {[
               {
                 n: '01', icon: <IconBrowse />, title: 'Pick your plan',
@@ -738,70 +409,22 @@ export default function Home() {
                 body: 'Your official credentials are sent directly to your WhatsApp in under 5 minutes.',
               },
             ].map(({ n, icon, title, body }) => (
-              <StaggerChild isMob={isMob} key={n}>
+              <StaggerChild key={n}>
                 <div style={{
                   background: '#111',
                   borderRadius: 22, padding: '32px 28px',
                   border: '1px solid rgba(255,255,255,0.06)',
-                  height: '100%', position: 'relative', overflow: 'hidden',
+                  height: '100%', position: 'relative'
                 }}>
-                  {/* corner glow — skip on mobile */}
-                  {!isMob && <div style={{
-                    position: 'absolute', top: -40, right: -40,
-                    width: 140, height: 140, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(212,175,55,0.07), transparent 70%)',
-                    pointerEvents: 'none',
-                  }} />}
                   <StepIcon>{icon}</StepIcon>
-                  <p style={{ fontSize: 10, fontWeight: 800, color: '#D4AF37', letterSpacing: '0.18em', marginBottom: 12, textTransform: 'uppercase' }}>{n}</p>
-                  <h3 style={{ fontSize: 20, fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.025em', marginBottom: 12 }}>{title}</h3>
-                  <p style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.65 }}>{body}</p>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: '#f5f5f7', marginBottom: 12 }}>{title}</h3>
+                  <p style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.6 }}>{body}</p>
                 </div>
               </StaggerChild>
             ))}
           </StaggerReveal>
-
         </div>
       </section>
-
-      {/* ── GOLD DIVIDER ──────────────────────────────────────── */}
-      <hr className="pk-divider" />
-
-      {/* ══════════════════════════════════════════════════
-          TESTIMONIALS
-      ══════════════════════════════════════════════════ */}
-      <section style={{ padding: '100px 24px' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-
-          <SectionReveal style={{ textAlign: 'center', marginBottom: 64 }}>
-            <p style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 16 }}>
-              What customers say
-            </p>
-            <h2 style={{
-              fontSize: 'clamp(30px, 4.5vw, 50px)', fontWeight: 700,
-              letterSpacing: '-0.04em', color: '#f5f5f7', marginBottom: 14,
-            }}>
-              Real people. Real savings.
-            </h2>
-            <p style={{ fontSize: 18, color: '#6e6e73' }}>
-              Thousands of happy subscribers across India.
-            </p>
-          </SectionReveal>
-
-          <StaggerReveal style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 16, alignItems: 'stretch' }}>
-            {TESTIMONIALS.map((t) => (
-              <StaggerChild key={t.name}>
-                <TestimonialCard {...t} />
-              </StaggerChild>
-            ))}
-          </StaggerReveal>
-
-          {/* ── LEAVE A REVIEW ─────────────────────────────────── */}
-          <ReviewForm />
-
-        </div>
-      </section>
-
-</main>
+    </main>
   )
 }
