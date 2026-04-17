@@ -160,23 +160,55 @@ export function Nav() {
   ]
 
   useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
     if (mobileOpen) {
-      document.body.style.overflow = 'hidden'
-      document.body.style.touchAction = 'none'
+      // Lock scroll on both html and body — Chrome requires html to be locked
+      const scrollY = window.scrollY
+      html.classList.add('menu-open')
+      html.style.overflow = 'hidden'
+      body.style.overflow = 'hidden'
+      // Preserve scroll position so page doesn't jump when menu opens
+      body.style.top = `-${scrollY}px`
+      body.style.position = 'fixed'
+      body.style.width = '100%'
     } else {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      // Restore scroll — get position from body.top before resetting
+      const scrollY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
+      html.classList.remove('menu-open')
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.position = ''
+      body.style.top = ''
+      body.style.width = ''
+      // Restore the scroll position Chrome may have reset
+      if (scrollY) window.scrollTo({ top: scrollY, behavior: 'instant' as ScrollBehavior })
     }
-    // Always clean up — prevents stuck scroll if component unmounts
+    // Safety net: always clean up on unmount
     return () => {
-      document.body.style.overflow = ''
-      document.body.style.touchAction = ''
+      const savedY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
+      html.classList.remove('menu-open')
+      html.style.overflow = ''
+      body.style.overflow = ''
+      body.style.position = ''
+      body.style.top = ''
+      body.style.width = ''
+      if (savedY) window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior })
     }
   }, [mobileOpen])
 
   useEffect(() => {
-    document.body.style.overflow = ''
-    document.body.style.touchAction = ''
+    // On route change: close menu and restore scroll
+    const html = document.documentElement
+    const body = document.body
+    const savedY = body.style.top ? Math.abs(parseInt(body.style.top, 10)) : 0
+    html.classList.remove('menu-open')
+    html.style.overflow = ''
+    body.style.overflow = ''
+    body.style.position = ''
+    body.style.top = ''
+    body.style.width = ''
+    if (savedY) window.scrollTo({ top: savedY, behavior: 'instant' as ScrollBehavior })
     setMobileOpen(false)
   }, [pathname])
 
@@ -275,11 +307,16 @@ export function Nav() {
         position: 'fixed', top: 52, left: 0, right: 0, bottom: 0, zIndex: 99,
         background: 'rgba(0,0,0,0.97)',
         display: 'flex', flexDirection: 'column',
+        overflowY: 'auto',
         padding: '24px 28px 48px',
         transition: 'opacity 0.3s ease, transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
         opacity: mobileOpen ? 1 : 0,
         transform: mobileOpen ? 'translateY(0)' : 'translateY(-12px)',
+        // visibility:hidden fully removes from event pipeline on Chrome Android
+        // pointerEvents:none alone is insufficient on some Chrome versions
+        visibility: mobileOpen ? 'visible' : 'hidden',
         pointerEvents: mobileOpen ? 'all' : 'none',
+        touchAction: mobileOpen ? 'pan-y' : 'none',
       }} className="show-mobile">
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
           {links.map(link => (

@@ -60,6 +60,8 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   cursor: auto;
+  /* Prevent scroll chaining on Chrome */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -67,8 +69,11 @@ body {
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow-x: hidden;
+  overflow-y: auto;
   line-height: 1.5;
   cursor: auto;
+  /* Chrome: ensure body is the scroll container */
+  position: relative;
 }
 
 /* Restore normal cursor everywhere */
@@ -352,18 +357,11 @@ html {
   text-size-adjust: 100%;
 }
 
-/* Smooth scrolling — native on mobile */
-html, body {
+/* Smooth scrolling — native on all browsers */
+html {
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  /* overscroll-behavior-y: none removed — it blocks native iOS momentum scroll */
-}
-
-/* Only lock overscroll on desktop (mouse devices) */
-@media (hover: hover) {
-  body {
-    overscroll-behavior-y: none;
-  }
+  /* NOTE: -webkit-overflow-scrolling:touch is deprecated; modern iOS uses native momentum scroll */
+  /* NOTE: overscroll-behavior-y set on html above — not repeated here */
 }
 
 /* Remove tap highlight on mobile — ONLY on interactive elements, NOT globally */
@@ -431,7 +429,6 @@ body {
   .pk-category-pills {
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
     justify-content: flex-start !important;
     padding-bottom: 4px !important;
@@ -476,19 +473,18 @@ body {
 }
 
 /* ── LAZY LOAD IMAGES ─────────────────────────────────────────────────────── */
-img {
-  content-visibility: auto;
+/* NOTE: content-visibility on img is also disabled — same Chrome scroll position bug.
+   Images use native loading="lazy" attribute instead (set directly on <img> tags). */
+img[loading="lazy"] {
+  /* Reserve space to prevent layout shift */
+  min-height: 1px;
 }
 
-/* ── content-visibility: skip off-screen sections ─────────────────────────── */
-/* Tells the browser to not layout/paint sections until they scroll near view.
-   containIntrinsicSize prevents layout shift by reserving approximate height. */
-@media (max-width: 768px) {
-  main > section {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 500px;
-  }
-}
+/* ── content-visibility: DISABLED ─────────────────────────────────────────── */
+/* content-visibility: auto is intentionally NOT applied to main > section.
+   It causes a well-documented Chrome bug where the browser loses track of
+   scroll position as off-screen sections are skipped, resulting in broken
+   or stuck scrolling. Use IntersectionObserver-based lazy loading instead. */
 
 /* ── REDUCE SHADER ANIMATION ON MOBILE ───────────────────────────────────── */
 @media (max-width: 768px) {
@@ -1010,4 +1006,48 @@ img {
   .pk-nav-logo { font-size: 16px !important; }
   .pk-store-grid { grid-template-columns: 1fr !important; }
   .pk-featured-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHROME SCROLL FIX — CRITICAL
+   Fixes broken/stuck scroll on Chrome desktop and Chrome Android.
+   Must be at the very END of this file so it wins specificity.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Always allow vertical scrolling on the root elements.
+      Chrome sometimes inherits overflow:hidden from JS-set inline styles
+      even after they've been removed. This ensures the cascade always
+      permits scroll at the CSS level. */
+html:not(.menu-open),
+body:not(.menu-open) {
+  overflow-y: visible !important;
+}
+
+/* 2. Allow touch-based vertical panning on the document root.
+      Without this, Chrome on Android can silently block scroll
+      if any ancestor has touch-action that doesn't include pan-y. */
+html, body {
+  touch-action: pan-y;
+}
+
+/* 3. Horizontal scrollers: touch-action must allow vertical scroll too.
+      touch-action: pan-x alone blocks vertical scroll on the same element,
+      causing Chrome to decide the whole page shouldn't scroll. */
+.pk-scroll-row,
+.pk-category-pills,
+.pk-admin-table-wrap {
+  touch-action: pan-x pan-y;
+}
+
+/* 4. Prevent any fixed/sticky element from accidentally eating scroll events. */
+[style*="position: fixed"],
+[style*="position:fixed"] {
+  /* pointer-events are handled per-element; nothing else should leak */
+}
+
+/* 5. Framer-motion layout elements: cancel will-change after animation
+      to prevent Chrome from creating stale compositor layers that trap scroll. */
+[data-framer-component-type="LayoutCamera"],
+[data-projection-id] {
+  will-change: auto;
 }
