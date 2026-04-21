@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-const S&M HOLDINGS= [
+const S&M ECOSYSTEM= [
   { name: 'PRIMEKEYS', url: '/',   live: true,  color: '#D4AF37' },
   { name: 'KAIDEX',      url: null,  live: false, color: '#60a5fa' },
   { name: 'TBD Studio',url: null,  live: false, color: '#a78bfa' },
