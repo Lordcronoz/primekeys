@@ -1,55 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOrder, updateOrder, logPayment, createClientFromOrder } from '@/lib/backend/firestore'
+import app, { db, auth } from '@/lib/firebase'
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { signInAnonymously } from 'firebase/auth'
 import { sendCredentials, sendCredentialsAlert } from '@/lib/backend/resend'
 import { getCredentialsDeliveryLink } from '@/lib/backend/whatsapp'
-import { activateSchema } from '@/lib/backend/validate'
-import { requireAdmin } from '@/lib/backend/auth'
+
+/** Inline secret check — no firebase-admin dependency */
+function checkSecret(req: NextRequest) {
+  const secret = req.headers.get('x-admin-secret')
+  if (!process.env.ADMIN_SECRET) return NextResponse.json({ message: 'ADMIN_SECRET not configured on server' }, { status: 500 })
+  if (secret !== process.env.ADMIN_SECRET) return NextResponse.json({ message: 'Admin access required' }, { status: 403 })
+  return null
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const adminError = requireAdmin(req)
-    if (adminError) return adminError
+    const authError = checkSecret(req)
+    if (authError) return authError
 
     const body = await req.json()
-    const { error } = activateSchema.validate(body, { abortEarly: false })
-    if (error) return NextResponse.json({ message: 'Validation failed', errors: error.details.map(d => d.message) }, { status: 400 })
-
     const { orderId, credentials } = body
-    const order = await getOrder(orderId)
-    if (!order) return NextResponse.json({ message: 'Order not found' }, { status: 404 })
 
-    const { name, email, phone, product, total, currency, utrNumber, paypalOrderId, paymentMethod, duration } = order
+    if (!orderId?.trim() || !credentials?.trim()) {
+      return NextResponse.json({ message: 'orderId and credentials required' }, { status: 400 })
+    }
 
-    await sendCredentials({ to: email, name, product, credentials })
-    await sendCredentialsAlert({ orderId, name, email, phone, product, credentials })
+    // Ensure anonymous session so Firestore rules pass
+    if (!auth.currentUser) {
+      await signInAnonymously(auth)
+    }
 
-    await updateOrder(orderId, { status: 'activated', activatedAt: new Date().toISOString() })
+    // 1. Read order (client SDK — no Admin needed)
+    const orderSnap = await getDoc(doc(db, 'orders', orderId))
+    if (!orderSnap.exists()) {
+      return NextResponse.json({ message: 'Order not found' }, { status: 404 })
+    }
 
-    const paymentMethodMap: Record<string, 'upi' | 'paypal' | 'wise'> = { paypal: 'paypal', upi: 'upi', wise: 'wise' }
-    await logPayment({
-      orderId, clientName: name, clientEmail: email, service: product,
-      amount: Number(total) || 0, currency: currency || 'INR',
-      utr: utrNumber || '', paypalOrderId: paypalOrderId || '',
-      paymentMethod: paymentMethodMap[paymentMethod || ''] || 'upi',
-      date: new Date().toISOString().split('T')[0],
+    const order = orderSnap.data()
+    const { name, email, phone, product, total, currency, paymentMethod } = order
+
+    // 2. Send credentials email to customer + admin alert (fire both, non-fatal)
+    await Promise.allSettled([
+      sendCredentials({ to: email, name, product, credentials }),
+      sendCredentialsAlert({ orderId, name, email, phone: phone || '', product, credentials }),
+    ])
+
+    // 3. Mark order as activated
+    await updateDoc(doc(db, 'orders', orderId), {
+      status: 'activated',
+      activatedAt: new Date().toISOString(),
     })
 
-    await createClientFromOrder({
-      name, email, phone, product,
-      duration: Number(duration) || 3,
-      total: Number(total) || 0,
+    // 4. Log payment record (non-fatal)
+    addDoc(collection(db, 'payments'), {
+      orderId, clientName: name, clientEmail: email,
+      service: product, amount: Number(total) || 0,
       currency: currency || 'INR',
-      orderId,
-      credentials: {
-        email:    credentials.split('\n').find((l: string) => l.toLowerCase().includes('email'))?.split(':')[1]?.trim() || '',
-        password: credentials.split('\n').find((l: string) => l.toLowerCase().includes('password'))?.split(':')[1]?.trim() || credentials,
-      },
-    })
+      paymentMethod: paymentMethod || 'upi',
+      date: new Date().toISOString().split('T')[0],
+      createdAt: serverTimestamp(),
+    }).catch(e => console.warn('[activate] payment log non-fatal:', e))
 
-    const waLink = getCredentialsDeliveryLink({ phone, name, product, credentials })
+    const waLink = getCredentialsDeliveryLink({ phone: phone || '', name, product, credentials })
     return NextResponse.json({ message: 'Credentials sent', waLink })
-  } catch (err) {
-    console.error('activate error:', err)
-    return NextResponse.json({ message: 'Failed to activate order' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[activate] error:', err)
+    return NextResponse.json({ message: err?.message || 'Failed to activate order' }, { status: 500 })
   }
 }

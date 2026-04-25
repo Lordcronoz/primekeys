@@ -93,15 +93,13 @@ export default function MobilePage({ featured }: { featured: any[] }) {
             <span style={{ fontSize: 10, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.15em', textTransform: 'uppercase' }}>S&M Holdings</span>
           </div>
 
-          <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: '#f5f5f7', marginBottom: 8 }}>
-            Premium Subscriptions.
-          </h1>
           <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 24 }}>
-            <span className="pk-shimmer-text">Fraction of the price.</span>
+            <span style={{ color: '#f5f5f7', display: 'block' }}>Cheap Premium Subscriptions.</span>
+            <span className="pk-shimmer-text">Up to 80% Off.</span>
           </h1>
 
-          <p style={{ fontSize: 16, color: '#7a7a80', lineHeight: 1.6, marginBottom: 32 }}>
-            Netflix, Spotify, ChatGPT Plus & more — up to <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>.
+          <p className="speakable" style={{ fontSize: 16, color: '#7a7a80', lineHeight: 1.6, marginBottom: 32 }}>
+            PRIMEKEYS sells Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys and VPN subscriptions at up to <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>, worldwide.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

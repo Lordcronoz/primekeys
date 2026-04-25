@@ -23,9 +23,10 @@ export default function ContactPage() {
 
           {/* WhatsApp */}
           <a
-            href="https://wa.me/918111956481"
+            href="https://wa.me/918111956481?text=Hi%20PRIMEKEYS%2C%20I%20want%20to%20buy%20a%20subscription"
             target="_blank"
             rel="noreferrer"
+            aria-label="Chat with PRIMEKEYS on WhatsApp"
             style={{ textDecoration: 'none' }}
           >
             <div style={{
@@ -56,7 +57,10 @@ export default function ContactPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 15, fontWeight: 700, color: '#f0f0f0', marginBottom: 4 }}>WhatsApp</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>+91 8111956481 — Fastest response, usually within minutes</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+                  <a href="tel:+918111956481" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>+91 81119 56481</a>
+                  {' '}— Fastest response, usually within minutes
+                </p>
               </div>
               <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.2)' }}>↗</span>
             </div>

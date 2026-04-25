@@ -226,23 +226,21 @@ export default function LandingPage() {
             <span style={{ fontSize: 11, fontWeight: 600, color: '#D4AF37', letterSpacing: '0.18em', textTransform: 'uppercase' }}>S&M Holdings</span>
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline — single H1 for SEO */}
           <motion.h1
             initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, color: '#f5f5f7', maxWidth: 980, marginBottom: 10 }}
-          >Premium Subscriptions.</motion.h1>
-          <motion.h1
-            initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.0, maxWidth: 980, marginBottom: 28 }}
-          ><span className="pk-shimmer-text">Fraction of the price.</span></motion.h1>
+            style={{ fontSize: 'clamp(42px, 7.5vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, maxWidth: 980, marginBottom: 28, textAlign: 'center' }}
+          >
+            <span style={{ color: '#f5f5f7', display: 'block' }}>Cheap Premium Subscriptions.</span>
+            <span className="pk-shimmer-text">Up to 80% Off.</span>
+          </motion.h1>
 
-          {/* Subheadline */}
-          <p style={{ fontSize: 18, fontWeight: 400, color: '#7a7a80', maxWidth: 500, lineHeight: 1.65, marginBottom: 40 }}>
-            Netflix, Spotify, ChatGPT Plus &amp; more — up to{' '}
-            <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in{' '}
-            <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>.
+          {/* Subheadline — speakable for AI assistants */}
+          <p className="speakable" style={{ fontSize: 18, fontWeight: 400, color: '#7a7a80', maxWidth: 520, lineHeight: 1.65, marginBottom: 40 }}>
+            PRIMEKEYS sells Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys, and VPN subscriptions at up to{' '}
+            <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span> the official price. Credentials are delivered to your WhatsApp in{' '}
+            <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>, worldwide.
           </p>
 
           {/* CTAs */}

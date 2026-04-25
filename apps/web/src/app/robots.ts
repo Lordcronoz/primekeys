@@ -4,32 +4,66 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        // All major crawlers — allow everything except private routes
+        // All crawlers — allow public pages, block private routes
         userAgent: '*',
         allow: '/',
         disallow: [
-          '/portal/',    // admin portal
-          '/api/',       // backend API routes
-          '/checkout',   // payment flow (no value indexing payment pages)
-          '/auth',       // auth pages
+          '/portal/',   // admin portal
+          '/api/',      // backend API routes
+          '/checkout',  // payment flow
+          '/auth',      // authentication pages
         ],
       },
       {
-        // Explicitly invite Google to crawl at a healthy rate
         userAgent: 'Googlebot',
         allow: '/',
-        disallow: ['/portal/', '/api/', '/checkout'],
-        crawlDelay: 0,
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
       },
       {
-        // Bing
         userAgent: 'Bingbot',
         allow: '/',
-        disallow: ['/portal/', '/api/', '/checkout'],
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
         crawlDelay: 1,
       },
+      // ── AI crawlers — explicitly invited ──────────────────────────────────
+      {
+        userAgent: 'GPTBot',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        userAgent: 'ClaudeBot',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        userAgent: 'anthropic-ai',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        userAgent: 'PerplexityBot',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        // Google-Extended controls Gemini training — NOT Googlebot-Extended
+        userAgent: 'Google-Extended',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        userAgent: 'CCBot',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
+      {
+        userAgent: 'cohere-ai',
+        allow: '/',
+        disallow: ['/portal/', '/api/', '/checkout', '/auth'],
+      },
     ],
-    sitemap: 'https://primekeys.app/sitemap.xml',
-    host: 'https://primekeys.app',
+    sitemap: 'https://www.primekeys.app/sitemap.xml',
+    host: 'https://www.primekeys.app',
   }
 }

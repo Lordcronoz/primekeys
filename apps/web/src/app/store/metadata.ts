@@ -1,42 +1,53 @@
 import type { Metadata } from 'next'
 
+const BASE_URL = 'https://www.primekeys.app'
+
 export const metadata: Metadata = {
-  title: 'Subscription Store — Netflix, Spotify, ChatGPT & More',
+  title: 'Buy Cheap Subscriptions — Netflix, Spotify, ChatGPT & More',
   description:
-    'Shop all premium subscriptions at up to 80% off. Netflix 4K, Spotify Premium, ChatGPT Plus, Disney+, YouTube Premium, Canva Pro & more. Official accounts. WhatsApp delivery in 5 minutes.',
-  alternates: { canonical: 'https://primekeys.app/store' },
+    'Shop all premium digital subscriptions at up to 80% off. Netflix, Spotify Premium, ChatGPT Plus, Microsoft 365, Windows keys, VPNs & more. Official accounts. WhatsApp delivery in 5 minutes.',
+  alternates: { canonical: `${BASE_URL}/store` },
   keywords: [
-    'buy Netflix India cheap',
-    'buy Spotify premium India',
-    'buy ChatGPT Plus India',
-    'buy Disney Plus India',
-    'buy YouTube Premium India',
-    'buy Canva Pro India',
-    'subscription store India',
-    'premium subscription shop India',
-    'cheap OTT store India',
+    'buy Netflix cheap',
+    'buy Spotify premium',
+    'buy ChatGPT Plus',
+    'buy Microsoft 365 cheap',
+    'buy Windows license key',
+    'cheap VPN subscription',
+    'subscription store',
+    'premium subscription shop',
+    'cheap digital subscriptions',
     'PRIMEKEYS store',
   ].join(', '),
+  robots: {
+    index: true,
+    follow: true,
+    'max-image-preview': 'large',
+    'max-snippet': -1,
+    'max-video-preview': -1,
+  },
   openGraph: {
-    title: 'PRIMEKEYS Store — Buy Premium Subscriptions at 80% Off',
+    title: 'Buy Cheap Subscriptions — Netflix, Spotify, ChatGPT & More | PRIMEKEYS',
     description:
-      'Netflix, Spotify, ChatGPT Plus & more. Official accounts delivered to WhatsApp in 5 min.',
-    url: 'https://primekeys.app/store',
+      'Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys & more. Official accounts delivered to WhatsApp in 5 min. Up to 80% off.',
+    url: `${BASE_URL}/store`,
+    siteName: 'PRIMEKEYS',
     type: 'website',
-    locale: 'en_IN',
+    locale: 'en',
     images: [
       {
-        url: 'https://primekeys.app/og-image.jpg',
+        url: `${BASE_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: 'PRIMEKEYS Store — Premium subscriptions at up to 80% off',
+        alt: 'PRIMEKEYS Store — Buy cheap premium subscriptions at up to 80% off',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PRIMEKEYS Store — Premium Subscriptions at 80% Off',
-    description: 'Netflix, Spotify, ChatGPT Plus & more. Delivered to WhatsApp in 5 minutes.',
-    images: ['https://primekeys.app/og-image.jpg'],
+    title: 'Buy Cheap Subscriptions — Netflix, Spotify, ChatGPT & More | PRIMEKEYS',
+    description:
+      'Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys & more. Delivered to WhatsApp in 5 minutes. Up to 80% off.',
+    images: [`${BASE_URL}/opengraph-image`],
   },
 }

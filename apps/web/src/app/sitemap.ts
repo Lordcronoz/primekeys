@@ -1,11 +1,11 @@
 import { MetadataRoute } from 'next'
 
-// Policy pages rarely change — use a stable date so Googlebot doesn't waste crawl budget
+// Policy pages are stable — use a fixed date so Googlebot doesn't waste crawl budget
 const POLICY_DATE = new Date('2026-03-01')
 const NOW = new Date()
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://primekeys.app'
+  const base = 'https://www.primekeys.app'
   return [
     // ── Core conversion pages (highest priority) ─────────────────────────────
     {
@@ -18,27 +18,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${base}/store`,
       lastModified: NOW,
       changeFrequency: 'daily',
-      priority: 0.95,
+      priority: 0.9,
     },
     // ── Brand / trust pages ───────────────────────────────────────────────────
     {
       url: `${base}/about`,
       lastModified: NOW,
       changeFrequency: 'monthly',
-      priority: 0.7,
+      priority: 0.8,
     },
     {
       url: `${base}/contact`,
       lastModified: NOW,
       changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    // ── Auth ──────────────────────────────────────────────────────────────────
-    {
-      url: `${base}/auth`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.4,
+      priority: 0.7,
     },
     // ── Legal / policy pages ──────────────────────────────────────────────────
     {
@@ -65,5 +58,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    // NOTE: /auth is intentionally excluded — private, noindex page
   ]
 }

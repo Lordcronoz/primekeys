@@ -404,20 +404,10 @@ export default function AboutPage() {
             transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
             style={{
               fontSize: 'clamp(40px, 7vw, 80px)', fontWeight: 800,
-              color: '#f5f5f7', letterSpacing: '-0.04em', lineHeight: 1.05, marginBottom: 6,
-            }}
-          >
-            Built by students.
-          </motion.h1>
-          <motion.h1
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontSize: 'clamp(40px, 7vw, 80px)', fontWeight: 800,
               letterSpacing: '-0.04em', lineHeight: 1.05, marginBottom: 28,
             }}
           >
+            <span style={{ color: '#f5f5f7', display: 'block' }}>Built by students.</span>
             <span className="pk-shimmer-text">For everyone.</span>
           </motion.h1>
 
@@ -425,11 +415,10 @@ export default function AboutPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
-            style={{ fontSize: 19, color: '#6e6e73', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 40px' }}
+            className="speakable"
+            style={{ fontSize: 19, color: '#6e6e73', lineHeight: 1.7, maxWidth: 580, margin: '0 auto 40px' }}
           >
-            In 2024, two college students sat down with a simple question —
-            why should premium software cost a month's salary?
-            PRIMEKEYS was their answer.
+            PRIMEKEYS is a digital subscription reseller based in Kerala, India. We provide Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys, and VPN subscriptions worldwide at up to 80% off the official price, with delivery to your WhatsApp in under 5 minutes.
           </motion.p>
 
           <motion.div
@@ -480,6 +469,20 @@ export default function AboutPage() {
           ))}
         </StaggerReveal>
       </section>
+
+      {/* ── GOLD DIVIDER */}
+      <hr className="pk-divider" />
+
+      {/* ════════════════════════════════════════ FACTUAL SUMMARY (AI visibility) */}
+      <SectionReveal style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 0' }}>
+        <p className="speakable" style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.8, textAlign: 'center' }}>
+          PRIMEKEYS is a digital subscription reseller based in Kerala, India. The business provides
+          Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows license keys, and VPN subscriptions
+          worldwide at up to 80% off the official retail price. Subscriptions are delivered digitally
+          via WhatsApp in under 5 minutes. Contact: <a href="tel:+918111956481" style={{ color: '#D4AF37' }}>+91 81119 56481</a> or{' '}
+          <a href="mailto:admin@primekeys.app" style={{ color: '#D4AF37' }}>admin@primekeys.app</a>.
+        </p>
+      </SectionReveal>
 
       {/* ── GOLD DIVIDER */}
       <hr className="pk-divider" />
