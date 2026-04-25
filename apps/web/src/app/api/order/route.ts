@@ -5,20 +5,49 @@ import { getWhatsAppAlertLink } from '@/lib/backend/whatsapp'
 import { orderSchema } from '@/lib/backend/validate'
 
 export async function POST(req: NextRequest) {
+  let orderId: string | null = null
+
   try {
     const body = await req.json()
     const { error } = orderSchema.validate(body, { abortEarly: false })
-    if (error) return NextResponse.json({ message: 'Validation failed', errors: error.details.map(d => d.message) }, { status: 400 })
+    if (error) {
+      return NextResponse.json(
+        { message: 'Validation failed', errors: error.details.map(d => d.message) },
+        { status: 400 },
+      )
+    }
 
     const { name, email, phone, product, duration, total, currency, referralCode } = body
-    const orderId = await createOrder({ name, email, phone, product, duration, total, currency, referralCode: referralCode || '' })
-    await sendOrderConfirmation({ to: email, name, orderId, product, duration, total, currency })
-    await sendNewOrderAlert({ orderId, name, email, phone, product, duration, total, currency })
+
+    // ── 1. Save order to Firestore (critical path) ──────────
+    orderId = await createOrder({
+      name, email, phone, product, duration, total, currency,
+      referralCode: referralCode || '',
+    })
+
+    // ── 2. Notifications (non-fatal) ────────────────────────
     const waLink = getWhatsAppAlertLink({ name, product, duration, total, currency, orderId })
     console.log('WA Alert:', waLink)
+
+    Promise.allSettled([
+      sendOrderConfirmation({ to: email, name, orderId, product, duration, total, currency }),
+      sendNewOrderAlert({ orderId, name, email, phone, product, duration, total, currency }),
+    ]).then(results => {
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.error(`Notification ${i} failed for order ${orderId}:`, r.reason)
+        }
+      })
+    })
+
     return NextResponse.json({ message: 'Order created', orderId, waLink }, { status: 201 })
+
   } catch (err) {
     console.error('createOrder error:', err)
+    // If Firestore write succeeded but something else threw, still return the orderId
+    if (orderId) {
+      return NextResponse.json({ message: 'Order created', orderId }, { status: 201 })
+    }
     return NextResponse.json({ message: 'Failed to create order' }, { status: 500 })
   }
 }

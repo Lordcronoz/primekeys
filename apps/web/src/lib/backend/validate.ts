@@ -9,7 +9,7 @@ export function validateBody<T>(schema: Joi.ObjectSchema) {
 export const orderSchema = Joi.object({
   name:         Joi.string().min(2).max(100).required(),
   email:        Joi.string().email().required(),
-  phone:        Joi.string().min(7).max(20).required(),
+  phone:        Joi.string().min(7).max(30).required(),
   product:      Joi.string().required(),
   duration:     Joi.number().valid(1, 3, 6, 12).required(),
   total:        Joi.number().positive().required(),
