@@ -6,7 +6,7 @@ import { CartProvider } from '@/context/CartContext'
 import { CartDrawer } from '@/components/CartDrawer'
 import { MaintenanceGate } from '@/components/ui/MaintenanceGate'
 import { ShellWrapper } from '@/components/ShellWrapper'
-
+import Script from 'next/script'
 const BASE_URL = 'https://www.primekeys.app'
 
 export const metadata: Metadata = {
@@ -343,6 +343,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        {/* Google Analytics 4 */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-SRMSJ89W67" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-SRMSJ89W67');
+          `}
+        </Script>
         <AuthProvider>
           <CurrencyProvider>
             <CartProvider>
