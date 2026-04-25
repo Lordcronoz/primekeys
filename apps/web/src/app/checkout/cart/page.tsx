@@ -18,6 +18,30 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 
 const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ''
 
+/** Fire-and-forget: send combined customer + admin email after all cart orders are placed */
+function notifyCartAsync({
+  name, email, phone, currency, paymentMethod, orders: placedOrders, cartItems,
+}: {
+  name: string; email: string; phone: string; currency: string; paymentMethod: string
+  orders: { id: string; product: string }[]
+  cartItems: { product: { id: string; name: string; effectiveINR: number; customPrices?: Record<string, number> }; months: number }[]
+}) {
+  const items = placedOrders.map(o => {
+    const ci = cartItems.find(c => c.product.name === o.product)
+    return {
+      orderId:  o.id,
+      product:  o.product,
+      duration: ci?.months || 1,
+      total:    ci ? itemTotal(ci.product.effectiveINR, ci.product.customPrices, ci.months, currency) : 0,
+    }
+  })
+  fetch('/api/cart-notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, phone, currency, paymentMethod, items }),
+  }).catch(err => console.warn('[cart-notify] non-critical fail:', err))
+}
+
 // ── PayPal button inner (handles loading / error states) ───
 function PayPalInner({ total, currency, description, onSuccess, onError }: {
   total: number; currency: string; description: string
@@ -220,6 +244,12 @@ function CartCheckoutContent() {
       setError('Please enter a valid UTR / reference number.'); return
     }
     setError('')
+    // Send thank-you email to customer + admin alert
+    notifyCartAsync({
+      name: formData.name, email: formData.email, phone: formData.phone,
+      currency: currencyCode, paymentMethod: currencyCode === 'INR' ? 'upi' : 'wise',
+      orders, cartItems,
+    })
     clearCart()
     setStep(3)
   }
@@ -426,6 +456,12 @@ function CartCheckoutContent() {
                                   : Promise.resolve()
                                 )
                               )
+                              // Send thank-you email to customer + admin alert
+                              notifyCartAsync({
+                                name: formData.name, email: formData.email, phone: formData.phone,
+                                currency: currencyCode, paymentMethod: 'paypal',
+                                orders, cartItems,
+                              })
                               clearCart()
                               setStep(3)
                             }}
