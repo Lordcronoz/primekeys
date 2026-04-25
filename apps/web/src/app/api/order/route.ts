@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOrder, getOrder, validateReferralCode } from '@/lib/backend/firestore'
+import { createOrder, getOrder } from '@/lib/backend/firestore'
 import { sendOrderConfirmation, sendNewOrderAlert } from '@/lib/backend/resend'
 import { getWhatsAppAlertLink } from '@/lib/backend/whatsapp'
 import { orderSchema } from '@/lib/backend/validate'
 
 export async function POST(req: NextRequest) {
   let orderId: string | null = null
+  let stage = 'parse'
 
   try {
+    stage = 'parse'
     const body = await req.json()
+
+    stage = 'validate'
     const { error } = orderSchema.validate(body, { abortEarly: false })
     if (error) {
       return NextResponse.json(
@@ -19,13 +23,15 @@ export async function POST(req: NextRequest) {
 
     const { name, email, phone, product, duration, total, currency, referralCode } = body
 
-    // ── 1. Save order to Firestore (critical path) ──────────
+    // ── 1. Save to Firestore ────────────────────────────────
+    stage = 'firestore'
     orderId = await createOrder({
       name, email, phone, product, duration, total, currency,
       referralCode: referralCode || '',
     })
 
-    // ── 2. Notifications (non-fatal) ────────────────────────
+    // ── 2. Notifications (non-fatal, fire-and-forget) ────────
+    stage = 'notifications'
     const waLink = getWhatsAppAlertLink({ name, product, duration, total, currency, orderId })
     console.log('WA Alert:', waLink)
 
@@ -35,20 +41,30 @@ export async function POST(req: NextRequest) {
     ]).then(results => {
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
-          console.error(`Notification ${i} failed for order ${orderId}:`, r.reason)
+          console.error(`[order/${orderId}] notification[${i}] failed:`, r.reason)
         }
       })
     })
 
     return NextResponse.json({ message: 'Order created', orderId, waLink }, { status: 201 })
 
-  } catch (err) {
-    console.error('createOrder error:', err)
-    // If Firestore write succeeded but something else threw, still return the orderId
+  } catch (err: any) {
+    const errMsg = err?.message || String(err)
+    console.error(`[order] FAILED at stage="${stage}" orderId=${orderId}:`, errMsg, err)
+
+    // Order was saved — don't block the customer
     if (orderId) {
       return NextResponse.json({ message: 'Order created', orderId }, { status: 201 })
     }
-    return NextResponse.json({ message: 'Failed to create order' }, { status: 500 })
+
+    // Surface a readable reason (not the raw stack) to help diagnose
+    const reason = stage === 'firestore'
+      ? `Database error: ${errMsg}`
+      : stage === 'parse'
+        ? 'Could not read request body'
+        : errMsg
+
+    return NextResponse.json({ message: reason }, { status: 500 })
   }
 }
 
