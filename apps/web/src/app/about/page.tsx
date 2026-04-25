@@ -473,19 +473,7 @@ export default function AboutPage() {
       {/* ── GOLD DIVIDER */}
       <hr className="pk-divider" />
 
-      {/* ════════════════════════════════════════ FACTUAL SUMMARY (AI visibility) */}
-      <SectionReveal style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 0' }}>
-        <p className="speakable" style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.8, textAlign: 'center' }}>
-          PRIMEKEYS is a digital subscription reseller based in Kerala, India. The business provides
-          Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows license keys, and VPN subscriptions
-          worldwide at up to 80% off the official retail price. Subscriptions are delivered digitally
-          via WhatsApp in under 5 minutes. Contact: <a href="tel:+918111956481" style={{ color: '#D4AF37' }}>+91 81119 56481</a> or{' '}
-          <a href="mailto:admin@primekeys.app" style={{ color: '#D4AF37' }}>admin@primekeys.app</a>.
-        </p>
-      </SectionReveal>
 
-      {/* ── GOLD DIVIDER */}
-      <hr className="pk-divider" />
 
       {/* ════════════════════════════════════════ ORIGIN STORY */}
       <SectionReveal style={{ maxWidth: 720, margin: '0 auto', padding: '80px 24px' }}>
