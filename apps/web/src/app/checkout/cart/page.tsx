@@ -82,12 +82,13 @@ function CartCheckoutContent() {
     if (product) cartItems.push({ product, months })
   }
 
-  const [step, setStep]       = useState<1|2|3>(1)
+  const [step, setStep]        = useState<1|2|3>(1)
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' })
-  const [orders, setOrders]   = useState<{ id: string; product: string }[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [utr, setUtr]         = useState('')
+  const [orders, setOrders]    = useState<{ id: string; product: string }[]>([])
+  const [loading, setLoading]  = useState(false)
+  const [error, setError]      = useState('')
+  const [utr, setUtr]          = useState('')
+  const [failedItems, setFailedItems] = useState<string[]>([])
 
   useEffect(() => {
     if (user) {
@@ -131,25 +132,42 @@ function CartCheckoutContent() {
     setLoading(true); setError('')
     try {
       const placed: { id: string; product: string }[] = []
+      const failed: string[] = []
       for (const item of cartItems) {
         const total   = itemTotal(item.product.effectiveINR, item.product.customPrices, item.months, currencyCode)
-        const rounded = roundPrice(total, currencyCode) // keep decimal for non-INR
-        const resp    = await createOrder({
-          name:     formData.name.trim(),
-          email:    formData.email.trim(),
-          phone:    formData.phone.trim(),
-          product:  item.product.id,
-          duration: item.months,
-          total:    rounded,
-          currency: currencyCode,
-        })
-        placed.push({ id: resp.orderId || '', product: item.product.name })
+        const rounded = roundPrice(total, currencyCode)
+        try {
+          const resp = await createOrder({
+            name:     formData.name.trim(),
+            email:    formData.email.trim(),
+            phone:    formData.phone.trim(),
+            product:  item.product.id,
+            duration: item.months,
+            total:    rounded,
+            currency: currencyCode,
+          })
+          placed.push({ id: resp.orderId || '', product: item.product.name })
+        } catch (itemErr: any) {
+          console.error('Item order failed:', item.product.id, itemErr)
+          failed.push(item.product.name)
+        }
       }
-      setOrders(placed)
-      setStep(2)
+      if (placed.length > 0) {
+        setOrders(placed)
+        if (failed.length > 0) {
+          setError(`${failed.join(', ')} could not be processed — please contact us on WhatsApp.`)
+        }
+        setStep(2)
+      } else {
+        // All orders failed — show error + WhatsApp fallback
+        const lastErr = 'Order processing failed. Please use WhatsApp below to complete your purchase.'
+        setError(lastErr)
+        setFailedItems(cartItems.map(i => i.product.name))
+      }
     } catch (err: any) {
       console.error(err)
-      setError(err.message || 'Failed to place order. Please try again.')
+      setError(err.message || 'Something went wrong. Please try again or contact us.')
+      setFailedItems(cartItems.map(i => i.product.name))
     } finally {
       setLoading(false)
     }
@@ -196,10 +214,32 @@ function CartCheckoutContent() {
           ))}
         </div>
 
-        {/* Error */}
+        {/* Error + WhatsApp fallback */}
         {error && (
-          <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(255,60,60,0.08)', border: '1px solid rgba(255,60,60,0.2)', borderRadius: 12, fontSize: 14, color: '#ff6060' }}>
-            {error}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ padding: '12px 16px', background: 'rgba(255,60,60,0.08)', border: '1px solid rgba(255,60,60,0.2)', borderRadius: 12, fontSize: 13, color: '#ff6060', marginBottom: failedItems.length > 0 ? 10 : 0 }}>
+              {error}
+            </div>
+            {failedItems.length > 0 && (
+              <a
+                href={`https://wa.me/918111956481?text=${encodeURIComponent(
+                  `Hi! I'd like to order:\n${cartItems.map(i => `• ${i.product.name} (${i.months} month${i.months > 1 ? 's' : ''})`).join('\n')}\n\nTotal: ${formatPrice(grandTotal, currencyCode)}\nCurrency: ${currencyCode}\nName: ${formData.name}`
+                )}`}
+                target="_blank" rel="noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '12px 20px', borderRadius: 12,
+                  background: 'rgba(37,211,102,0.08)',
+                  border: '1px solid rgba(37,211,102,0.3)',
+                  color: '#25D366', fontWeight: 700, fontSize: 14, textDecoration: 'none',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.134.558 4.133 1.532 5.864L.057 23.57a.5.5 0 0 0 .614.612l5.807-1.461A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+                </svg>
+                Complete Order on WhatsApp
+              </a>
+            )}
           </div>
         )}
 
