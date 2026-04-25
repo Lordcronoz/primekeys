@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DURATIONS, CURRENCIES } from '@primekeys/shared'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
-import { ArrowLeft, Check, MessageCircle, Shield, Zap, Clock } from 'lucide-react'
+import { ArrowLeft, Check, MessageCircle, Shield, Zap, Clock, ShoppingBag } from 'lucide-react'
 
 const svgDataUri = (s: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s)}`
 
@@ -47,8 +48,10 @@ export default function ProductPage() {
   const params = useParams()
   const { currencyCode } = useCurrency()
   const allProducts = useCatalogue()
+  const { addToCart, items } = useCart()
   const [selectedMonths, setSelectedMonths] = useState(1)
   const [ordering, setOrdering] = useState(false)
+  const [cartAdded, setCartAdded] = useState(false)
 
   const id = typeof params.id === 'string' ? params.id : params.id?.[0]
   const product = allProducts.find(p => p.id === id)
@@ -93,6 +96,23 @@ export default function ProductPage() {
   })()
   const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
   const isUPI = currencyCode === 'INR'
+
+  // Market price (official retail) — admin-set, auto-converted
+  const marketPerMonth = (() => {
+    if (!product.marketPriceINR) return null
+    if (currencyCode === 'INR') return product.marketPriceINR
+    return parseFloat((product.marketPriceINR * curr.rate).toFixed(2))
+  })()
+  const marketTotal = marketPerMonth ? parseFloat((marketPerMonth * selectedMonths).toFixed(2)) : null
+  const savingsPct = marketPerMonth && perMonth < marketPerMonth
+    ? Math.round((1 - perMonth / marketPerMonth) * 100) : null
+
+  const inCart = items.some(i => i.product.id === product.id)
+  const handleAddToCart = () => {
+    addToCart(product as any, selectedMonths)
+    setCartAdded(true)
+    setTimeout(() => setCartAdded(false), 2000)
+  }
   const handleUPIOrder = () => {
     setOrdering(true)
     const msg = encodeURIComponent(
@@ -127,11 +147,32 @@ export default function ProductPage() {
       <div style={{ height: 3, background: `linear-gradient(to right, ${product.color}, transparent)` }} />
 
       <div style={{ padding: 24 }}>
+        {/* Market price comparison */}
+        {marketPerMonth && (
+          <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 12, background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>🔥 You save {savingsPct}% vs official</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>{product.name} charges officially</p>
+                <p style={{ fontSize: 15, color: '#555', textDecoration: 'line-through', fontWeight: 600 }}>
+                  {currencyCode === 'INR' ? `₹${Math.round(marketPerMonth)}` : `${curr.symbol}${marketPerMonth}`}/mo
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: 10, color: '#4ade80', marginBottom: 2 }}>Our price</p>
+                <p style={{ fontSize: 20, color: '#4ade80', fontWeight: 800, letterSpacing: '-0.03em' }}>
+                  {formatPrice(perMonth, currencyCode)}/mo
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Price */}
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 11, fontWeight: 600, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Price per month</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <p style={{ fontSize: 36, fontWeight: 800, color: '#f5f5f7', letterSpacing: '-0.04em', lineHeight: 1 }}>
+            <p style={{ fontSize: 36, fontWeight: 800, color: marketPerMonth ? '#4ade80' : '#f5f5f7', letterSpacing: '-0.04em', lineHeight: 1 }}>
               {formatPrice(perMonth, currencyCode)}
             </p>
             <span style={{ fontSize: 14, color: '#555' }}>/mo</span>
@@ -192,14 +233,38 @@ export default function ProductPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: '#6e6e73' }}>Total</span>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: 18, fontWeight: 800, color: '#f5f5f7' }}>{formatPrice(total, currencyCode)}</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: marketPerMonth ? '#4ade80' : '#f5f5f7' }}>{formatPrice(total, currencyCode)}</p>
               {originalTotal && <p style={{ fontSize: 11, color: '#555', textDecoration: 'line-through' }}>{formatPrice(originalTotal, currencyCode)}</p>}
+              {marketTotal && !originalTotal && (
+                <p style={{ fontSize: 11, color: '#555', textDecoration: 'line-through' }}>
+                  {currencyCode === 'INR' ? `₹${Math.round(marketTotal)}` : `${curr.symbol}${marketTotal}`} official
+                </p>
+              )}
             </div>
           </div>
           <p style={{ fontSize: 10, color: '#444', marginTop: 6 }}>
             Pay via PayPal · Delivered on WhatsApp within 5 min
           </p>
         </div>
+
+        {/* Add to Cart button */}
+        {!product.stockOut && (
+          <button
+            onClick={handleAddToCart}
+            style={{
+              width: '100%', height: 46, borderRadius: 12, marginBottom: 8,
+              background: inCart || cartAdded ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${inCart || cartAdded ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.1)'}`,
+              color: inCart || cartAdded ? '#D4AF37' : '#a1a1a6',
+              fontSize: 14, fontWeight: 600, cursor: inCart ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'all 0.2s',
+            }}
+          >
+            <ShoppingBag size={15} />
+            {inCart ? 'Added to Bag ✓' : cartAdded ? 'Added! ✓' : 'Add to Bag'}
+          </button>
+        )}
 
         {/* CTA */}
         {product.stockOut ? (

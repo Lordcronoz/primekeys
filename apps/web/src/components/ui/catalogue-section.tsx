@@ -28,6 +28,7 @@ type Product = {
   customPrices?: Record<string, number>
   stockOutDurations?: string[] // e.g. ['1 Month', '3 Months']
   description?: string
+  marketPriceINR?: number      // what the platform officially charges (for savings display)
 }
 
 const BASE_PRODUCTS: Product[] = PRODUCTS.map(p => ({
@@ -145,6 +146,7 @@ export function CatalogueSection() {
           customPrices:      p.customPrices ?? null,
           stockOutDurations: p.stockOutDurations ?? [],
           description:       p.description ?? null,
+          marketPriceINR:    p.marketPriceINR ?? null,
         }
       }, { merge: true })
       setSaved(p.id); setTimeout(() => setSaved(null), 2000)
@@ -304,6 +306,27 @@ export function CatalogueSection() {
                         <input type="number" min={1} value={editValues.customPrice??editValues.basePrice??p.basePrice} onChange={e=>setEditValues(v=>({...v,customPrice:Number(e.target.value)}))} style={{...fld,paddingLeft:44}}/>
                       </div>
                       <p style={{fontSize:10,color:'#444',marginTop:4}}>Default base: ₹{p.basePrice} · Customers see their local currency automatically</p>
+                    </div>
+
+                    {/* ── Market / Official Retail Price ───────────── */}
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{...lbl, color:'#4ade80'}}>Official Retail Price (INR/mo) — what {p.name} charges customers directly</label>
+                      <div style={{position:'relative'}}>
+                        <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',fontSize:11,color:'#4ade80',fontWeight:700,fontFamily:'monospace'}}>₹</span>
+                        <input
+                          type="number" min={0} step={1}
+                          value={editValues.marketPriceINR ?? p.marketPriceINR ?? ''}
+                          onChange={e => setEditValues(v => ({ ...v, marketPriceINR: e.target.value ? Number(e.target.value) : undefined }))}
+                          placeholder="e.g. 649 for Netflix 4K"
+                          style={{...fld, paddingLeft:28}}
+                          onFocus={e => (e.currentTarget.style.borderColor='rgba(74,222,128,0.5)')}
+                          onBlur={e => (e.currentTarget.style.borderColor='rgba(255,255,255,0.1)')}
+                        />
+                      </div>
+                      <p style={{fontSize:10,color:'#444',marginTop:4}}>
+                        Shown on product cards as strikethrough — customers see how much they save vs official price.
+                        Leave blank to hide the comparison. Auto-converts to customer's currency.
+                      </p>
                     </div>
 
                     {/* Per-currency price overrides */}

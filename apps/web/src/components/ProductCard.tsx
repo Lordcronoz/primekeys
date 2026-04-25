@@ -1,9 +1,11 @@
 'use client'
 
-import { calcPrice, formatPrice, PRODUCTS } from '@primekeys/shared'
+import { calcPrice, formatPrice, PRODUCTS, CURRENCIES } from '@primekeys/shared'
 import { useCurrency } from '@/context/CurrencyContext'
 import { useCatalogue, type CatalogueProduct } from '@/hooks/useCatalogue'
+import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
+import { useState } from 'react'
 
 const svgDataUri = (svgContent: string) =>
   `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`
@@ -12,12 +14,12 @@ const BRAND_ICONS: Record<string, string> = {
   netflix: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#E50914" d="M5.398 0v.006c3.028 8.556 5.37 15.175 8.348 23.596 2.344.058 4.85.398 4.854.398-2.8-7.924-5.923-16.747-8.487-24zm8.489 0v9.63L18.6 24c-.538.086-2.953.408-4.32.6L9.386 13.098v10.821L5.398 24V0z"/></svg>`),
   spotify: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1DB954" d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`),
   youtube: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`),
-  chatgpt: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.843-3.369L15.114 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.402-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.098-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>`),
-  disney: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#113CCF" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm1.188 5.52c.738 0 1.29.204 1.656.612.366.408.549.936.549 1.584s-.183 1.176-.549 1.584c-.366.408-.918.612-1.656.612-.744 0-1.302-.204-1.674-.612-.372-.408-.558-.936-.558-1.584s.186-1.176.558-1.584c.372-.408.93-.612 1.674-.612zm-3.744 8.52c.36.864.984 1.476 1.872 1.836.564.228 1.188.336 1.872.336.996 0 1.896-.276 2.7-.828.804-.552 1.356-1.32 1.656-2.304.144-.456.216-.924.216-1.404 0-.876-.228-1.668-.684-2.376-.456-.708-1.092-1.224-1.908-1.548.6.492 1.02 1.14 1.26 1.944.12.408.18.828.18 1.26 0 .564-.108 1.08-.324 1.548s-.528.864-.936 1.188c-.408.324-.888.54-1.44.648-.552.108-1.116.06-1.692-.144-.576-.204-1.068-.564-1.476-1.08-.408-.516-.648-1.116-.72-1.8-.072-.684.036-1.344.324-1.98a4.14 4.14 0 0 1 1.26-1.584c-.804.18-1.5.576-2.088 1.188S8.316 10.14 8.1 11.04c-.216.9-.18 1.788.108 2.664.288.876.78 1.62 1.476 2.232-.168-.3-.288-.6-.36-.9-.072-.3-.072-.612 0-.996z"/></svg>`),
-  canva: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#00C4CC" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm3.097 15.515c-.437.631-1.19 1.069-1.934 1.069-1.178 0-1.769-.85-2.284-1.638-.363-.563-.671-1.028-1.026-1.028-.354 0-.662.47-1.024 1.033-.53.822-1.124 1.638-2.284 1.638-.742 0-1.497-.436-1.933-1.067-.392-.563-.57-1.281-.57-2.113 0-1.688.69-3.127 1.944-3.127 1.089 0 1.611 1.251 2.126 2.478.263.63.528 1.264.787 1.264.264 0 .528-.641.794-1.277.515-1.223 1.035-2.465 2.126-2.465 1.254 0 1.944 1.439 1.944 3.127-.001.833-.179 1.551-.666 2.106z"/></svg>`),
-  amazon: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF9900" d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.685zm3.186 7.705c-.209.189-.512.201-.745.074-1.047-.872-1.234-1.276-1.814-2.106-1.734 1.768-2.962 2.297-5.209 2.297-2.66 0-4.731-1.641-4.731-4.925 0-2.565 1.391-4.309 3.37-5.164 1.715-.754 4.11-.891 5.942-1.099v-.41c0-.753.06-1.642-.384-2.294-.385-.579-1.124-.82-1.775-.82-1.205 0-2.277.618-2.54 1.897-.054.285-.261.567-.549.582l-3.061-.333c-.259-.056-.548-.266-.472-.66C5.977 2.469 9.068 1.5 11.846 1.5c1.44 0 3.32.384 4.454 1.476 1.439 1.342 1.301 3.134 1.301 5.086v4.607c0 1.385.576 1.993 1.117 2.741.19.267.232.587-.01.784-.604.505-1.678 1.443-2.269 1.973l-.295-.362zM24 18.558c-2.9 2.045-7.111 3.134-10.729 3.134-5.077 0-9.643-1.876-13.099-4.997-.272-.245-.029-.578.298-.388 3.732 2.17 8.344 3.476 13.1 3.476 3.212 0 6.748-.665 9.998-2.044.49-.208.9.326.432.819z"/></svg>`),
-  linkedin: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`),
-  appletv: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`),
+  chatgpt: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494z"/></svg>`),
+  disney:   svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#113CCF" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z"/></svg>`),
+  canva:    svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#00C4CC" d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z"/></svg>`),
+  amazon:   svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF9900" d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.438-2.186 1.438-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.685z"/></svg>`),
+  linkedin: svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452z"/></svg>`),
+  appletv:  svgDataUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffffff" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98z"/></svg>`),
 }
 
 interface ProductCardProps {
@@ -26,11 +28,11 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { currencyCode } = useCurrency()
+  const { addToCart, items } = useCart()
+  const [added, setAdded] = useState(false)
 
-  // Respect per-currency admin override — if customPrices[currencyCode] exists,
-  // use it as the base (per-month price in that currency), bypassing INR conversion.
+  // ── Our price ──────────────────────────────────────────────
   const customMonthlyPrice = product.customPrices?.[currencyCode]
-
   const { perMonth } = customMonthlyPrice !== undefined
     ? { perMonth: parseFloat((customMonthlyPrice * (1 - (product.discount || 0) / 100)).toFixed(2)) }
     : calcPrice(product.effectiveINR, 1, currencyCode)
@@ -41,40 +43,74 @@ export function ProductCard({ product }: ProductCardProps) {
     return calcPrice(product.customPrice ?? product.baseINR, 1, currencyCode).perMonth
   })()
 
-  // Logo: admin-uploaded customLogo wins, then brand SVG, then initial letter
-  const iconSrc  = product.customLogo || BRAND_ICONS[product.id]
+  // ── Market price (official retail) ─────────────────────────
+  // Admin sets marketPriceINR (what Spotify, Netflix etc. charge officially)
+  // We convert it to the user's currency using the same rate logic
+  const marketPerMonth = (() => {
+    if (!product.marketPriceINR) return null
+    if (currencyCode === 'INR') return product.marketPriceINR
+    const curr = CURRENCIES[currencyCode] || CURRENCIES.INR
+    return parseFloat((product.marketPriceINR * curr.rate).toFixed(2))
+  })()
+
+  // Savings % vs official price
+  const savingsPct = marketPerMonth && perMonth < marketPerMonth
+    ? Math.round((1 - perMonth / marketPerMonth) * 100)
+    : null
+
+  // ── Display strings ────────────────────────────────────────
+  const currSymbols: Record<string, string> = {
+    USD: '$', AED: 'AED ', GBP: '£', EUR: '€',
+    AUD: 'A$', SGD: 'S$', CAD: 'C$', MYR: 'RM ',
+    QAR: 'QAR ', SAR: 'SAR ', KWD: 'KWD ',
+  }
+  const sym = currencyCode === 'INR' ? '₹' : (currSymbols[currencyCode] || currencyCode + ' ')
+
+  const fmtNum = (n: number) => currencyCode === 'INR' ? `₹${Math.round(n)}` : `${sym}${parseFloat(n.toFixed(2))}`
+
+  const displayPrice    = fmtNum(perMonth)
+  const displayOriginal = originalPerMonth === null ? null : fmtNum(originalPerMonth)
+  const displayMarket   = marketPerMonth === null   ? null : fmtNum(marketPerMonth)
+
+  // Logo
+  const iconSrc    = product.customLogo || BRAND_ICONS[product.id]
   const hasDiscount = (product.discount || 0) > 0
   const isStockOut  = product.stockOut || false
+  const inCart      = items.some(i => i.product.id === product.id)
 
-  const displayPrice = currencyCode === 'INR'
-    ? `₹${Math.round(perMonth)}`
-    : (() => {
-        const curr = { USD: '$', AED: 'AED ', GBP: '£', EUR: '€', AUD: 'A$', SGD: 'S$', CAD: 'C$', MYR: 'RM ', QAR: 'QAR ', SAR: 'SAR ', KWD: 'KWD ' }
-        const sym  = (curr as any)[currencyCode] || currencyCode + ' '
-        return `${sym}${parseFloat(perMonth.toFixed(2))}`
-      })()
-
-  const displayOriginal = originalPerMonth === null ? null : currencyCode === 'INR'
-    ? `₹${Math.round(originalPerMonth)}`
-    : (() => {
-        const curr = { USD: '$', AED: 'AED ', GBP: '£', EUR: '€', AUD: 'A$', SGD: 'S$', CAD: 'C$', MYR: 'RM ', QAR: 'QAR ', SAR: 'SAR ', KWD: 'KWD ' }
-        const sym  = (curr as any)[currencyCode] || currencyCode + ' '
-        return `${sym}${parseFloat(originalPerMonth.toFixed(2))}`
-      })()
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isStockOut || inCart) return
+    addToCart(product, 1)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1800)
+  }
 
   return (
     <Link href={`/store/${product.id}`} className="group block" style={{ textDecoration: 'none', pointerEvents: isStockOut ? 'none' : 'auto' }}>
       <div style={{
         background: '#1d1d1f',
-        borderRadius: 20, padding: 24,
-        display: 'flex', flexDirection: 'column', gap: 12,
+        borderRadius: 20, padding: '20px 20px 16px',
+        display: 'flex', flexDirection: 'column', gap: 10,
         minHeight: 240, cursor: isStockOut ? 'not-allowed' : 'pointer',
-        transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
+        transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s',
         opacity: isStockOut ? 0.5 : 1,
         position: 'relative', overflow: 'hidden',
+        border: inCart ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
       }}
-        onMouseEnter={e => { if (!isStockOut) (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)' }}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'scale(1)'}
+        onMouseEnter={e => {
+          if (!isStockOut) {
+            const el = e.currentTarget as HTMLElement
+            el.style.transform = 'scale(1.02)'
+            el.style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)'
+          }
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLElement
+          el.style.transform = 'scale(1)'
+          el.style.boxShadow = 'none'
+        }}
       >
         {/* Stock out overlay */}
         {isStockOut && (
@@ -83,8 +119,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        {/* Discount badge */}
-        {hasDiscount && !isStockOut && (
+        {/* Savings badge (market vs our price) */}
+        {savingsPct && !isStockOut && (
+          <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 9px', borderRadius: 6, background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)', fontSize: 9, fontWeight: 800, color: '#4ade80', letterSpacing: '0.1em' }}>
+            SAVE {savingsPct}%
+          </div>
+        )}
+
+        {/* Discount badge (no market price set, fall back to product discount) */}
+        {!savingsPct && hasDiscount && !isStockOut && (
           <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 8px', borderRadius: 6, background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', fontSize: 9, fontWeight: 800, color: '#60a5fa', letterSpacing: '0.1em' }}>
             {product.discount}% OFF
           </div>
@@ -112,12 +155,36 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
         </div>
 
-        {/* Price + Arrow */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        {/* Market price comparison row */}
+        {displayMarket && !isStockOut && (
+          <div style={{
+            padding: '7px 10px', borderRadius: 8,
+            background: 'rgba(74,222,128,0.05)',
+            border: '1px solid rgba(74,222,128,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <span style={{ fontSize: 10, color: '#555', fontWeight: 500 }}>
+              {product.name} charges
+            </span>
+            <span style={{ fontSize: 11, color: '#555', textDecoration: 'line-through', fontWeight: 600 }}>
+              {displayMarket}/mo
+            </span>
+          </div>
+        )}
+
+        {/* Price + CTA row */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>From</p>
+            {displayMarket && !isStockOut && (
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#4ade80', letterSpacing: '0.04em', marginBottom: 1 }}>
+                Our price
+              </p>
+            )}
+            {!displayMarket && (
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>From</p>
+            )}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <p style={{ fontSize: 22, fontWeight: 700, color: isStockOut ? '#555' : '#f5f5f7', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: isStockOut ? '#555' : displayMarket ? '#4ade80' : '#f5f5f7', letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {displayPrice}<span style={{ fontSize: 13, fontWeight: 400, color: '#6e6e73', marginLeft: 2 }}>/mo</span>
               </p>
               {displayOriginal && !isStockOut && (
@@ -127,12 +194,40 @@ export function ProductCard({ product }: ProductCardProps) {
               )}
             </div>
           </div>
+
           {!isStockOut && (
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}>
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
-              </svg>
-            </div>
+            <button
+              onClick={handleAddToCart}
+              title={inCart ? 'Already in bag' : 'Add to bag'}
+              style={{
+                width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                background: inCart || added
+                  ? 'rgba(212,175,55,0.2)'
+                  : 'rgba(255,255,255,0.07)',
+                border: inCart || added
+                  ? '1px solid rgba(212,175,55,0.5)'
+                  : '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: inCart || added ? '#D4AF37' : 'rgba(255,255,255,0.4)',
+                cursor: inCart ? 'default' : 'pointer',
+                transition: 'all 0.2s',
+                transform: added ? 'scale(1.18)' : 'scale(1)',
+              }}
+            >
+              {inCart || added ? (
+                /* checkmark */
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+              ) : (
+                /* bag+ icon */
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path strokeLinecap="round" d="M12 11v6M9 14h6"/>
+                </svg>
+              )}
+            </button>
           )}
         </div>
       </div>

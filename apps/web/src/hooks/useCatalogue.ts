@@ -18,6 +18,7 @@ export type CatalogueProduct = typeof PRODUCTS[0] & {
   customPrices?: Record<string, number>   // per-currency admin overrides
   customLogo?: string                       // base64 or URL admin-uploaded logo
   stockOutDurations?: string[]              // e.g. ['1 Month', '3 Months']
+  marketPriceINR?: number                   // official retail price (admin-set) for savings comparison
 }
 
 let cachedProducts: CatalogueProduct[] | null = null
@@ -38,6 +39,7 @@ function merge(data: Record<string, any>): CatalogueProduct[] {
       customPrices:      override.customPrices      ?? undefined,
       customLogo:        override.customLogo        ?? undefined,
       stockOutDurations: override.stockOutDurations ?? undefined,
+      marketPriceINR:    override.marketPriceINR    ?? undefined,
     }
   })
 
@@ -59,6 +61,7 @@ function merge(data: Record<string, any>): CatalogueProduct[] {
       customLogo:        v.customLogo        ?? undefined,
       stockOutDurations: v.stockOutDurations ?? undefined,
       effectiveINR: Math.round((v.customPrice ?? v.basePrice) * (1 - (v.discount ?? 0) / 100)),
+      marketPriceINR:    v.marketPriceINR    ?? undefined,
     }))
 
   return [...base, ...custom]

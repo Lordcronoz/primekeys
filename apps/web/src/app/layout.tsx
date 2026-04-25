@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { CurrencyProvider } from '@/context/CurrencyContext'
+import { CartProvider } from '@/context/CartContext'
+import { CartDrawer } from '@/components/CartDrawer'
 import { MaintenanceGate } from '@/components/ui/MaintenanceGate'
 import { ShellWrapper } from '@/components/ShellWrapper'
 
@@ -259,9 +261,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <CurrencyProvider>
-            <MaintenanceGate>
-              <ShellWrapper>{children}</ShellWrapper>
-            </MaintenanceGate>
+            <CartProvider>
+              <MaintenanceGate>
+                <ShellWrapper>{children}</ShellWrapper>
+                <CartDrawer />
+              </MaintenanceGate>
+            </CartProvider>
           </CurrencyProvider>
         </AuthProvider>
       </body>

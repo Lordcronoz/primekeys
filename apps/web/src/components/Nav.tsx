@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCurrency } from '@/context/CurrencyContext'
+import { useCart } from '@/context/CartContext'
 import { REGIONS, CURRENCIES, REGION_TO_CURRENCY } from '@primekeys/shared'
 import { useState, useRef, useEffect } from 'react'
 import { useScroll } from '@/components/ui/use-scroll'
 import { UserProfileDropdown } from '@/components/ui/user-profile-dropdown'
-import { MessageSquare, Settings, LogOut, User } from 'lucide-react'
+import { MessageSquare, Settings, LogOut, User, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export function CurrencyPicker() {
@@ -131,6 +132,7 @@ export function Nav() {
   const scrolled = useScroll(40)
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { totalItems, toggleCart } = useCart()
 
   const dropdownActions = [
     { icon: MessageSquare, label: 'Support', onClick: () => window.open('https://wa.me/918111956481', '_blank') },
@@ -215,6 +217,41 @@ export function Nav() {
         {/* Right side */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <CurrencyPicker />
+
+          {/* Cart bag icon */}
+          <button
+            id="nav-cart-btn"
+            onClick={toggleCart}
+            style={{
+              position: 'relative',
+              width: 30, height: 30,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: totalItems > 0 ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)',
+              border: totalItems > 0 ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8, cursor: 'pointer',
+              color: totalItems > 0 ? '#D4AF37' : '#a1a1a6',
+              transition: 'all 0.2s',
+              flexShrink: 0,
+            }}
+          >
+            <ShoppingBag size={14} />
+            {totalItems > 0 && (
+              <span style={{
+                position: 'absolute', top: -5, right: -5,
+                minWidth: 16, height: 16,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg,#D4AF37,#C49A20)',
+                color: '#000', fontSize: 9, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1.5px solid #000',
+                lineHeight: 1, padding: '0 3px',
+                animation: 'pkBadgePop 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+              }}>
+                {totalItems > 9 ? '9+' : totalItems}
+              </span>
+            )}
+          </button>
+          <style>{`@keyframes pkBadgePop{from{transform:scale(0)}to{transform:scale(1)}}`}</style>
 
           <div style={{ display: 'flex' }} className="hidden-mobile">
             {!user ? (
