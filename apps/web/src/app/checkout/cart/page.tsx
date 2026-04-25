@@ -8,10 +8,48 @@ import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useCatalogue, type CatalogueProduct } from '@/hooks/useCatalogue'
 import { createOrderClient, notifyOrderAsync } from '@/lib/orderClient'
+import { updateDoc, doc } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, User, CreditCard } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+
+const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ''
+
+// ── PayPal button inner (handles loading / error states) ───
+function PayPalInner({ total, currency, description, onSuccess, onError }: {
+  total: number; currency: string; description: string
+  onSuccess: (id: string) => void; onError: () => void
+}) {
+  const [{ isResolved, isRejected }] = usePayPalScriptReducer()
+  if (isRejected) return (
+    <div style={{ padding: '12px 14px', borderRadius: 10, background: 'rgba(255,200,0,0.06)', border: '1px solid rgba(255,200,0,0.2)', fontSize: 13, color: '#aaa' }}>
+      PayPal failed to load. Please refresh or use Wise below.
+    </div>
+  )
+  if (!isResolved) return (
+    <div style={{ height: 48, borderRadius: 10, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 13, gap: 8 }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round"/></svg>
+      Loading PayPal…
+    </div>
+  )
+  return (
+    <PayPalButtons
+      style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 48 }}
+      createOrder={(_d, a) => a.order.create({
+        intent: 'CAPTURE',
+        purchase_units: [{ amount: { currency_code: currency, value: total.toFixed(2) }, description }],
+      })}
+      onApprove={async (d, a) => {
+        try { const o = await a.order!.capture(); onSuccess(o.id ?? d.orderID) }
+        catch (e) { console.error('[PayPal]', e); onError() }
+      }}
+      onError={e => { console.error('[PayPal]', e); onError() }}
+    />
+  )
+}
 
 // ── helpers ────────────────────────────────────────────────
 function roundPrice(n: number, currency: string) {
@@ -343,13 +381,6 @@ function CartCheckoutContent() {
             <Card>
               <CardHeader title="Complete Payment" />
               <div style={{ padding: '20px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                  <CreditCard size={15} color="#6e6e73" />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#a1a1a6' }}>
-                    {currencyCode === 'INR' ? 'UPI Payment' : 'International Transfer'}
-                  </span>
-                </div>
-
                 {/* Amount pill */}
                 <div style={{ padding: '14px 16px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: 12, marginBottom: 20, textAlign: 'center' }}>
                   <p style={{ fontSize: 11, color: '#6e6e73', marginBottom: 4 }}>Amount to pay</p>
@@ -359,6 +390,7 @@ function CartCheckoutContent() {
                 </div>
 
                 {currencyCode === 'INR' ? (
+                  /* ── UPI ── */
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}>
                       <p style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>UPI ID</p>
@@ -368,27 +400,54 @@ function CartCheckoutContent() {
                     <div>
                       <p style={{ fontSize: 12, color: '#a1a1a6', marginBottom: 8 }}>Enter UTR / Reference Number after payment</p>
                       <Input
-                        placeholder="12-digit UTR number (e.g. 123456789012)"
+                        placeholder="12-digit UTR number"
                         value={utr}
                         onChange={e => setUtr(e.target.value.replace(/\D/g, '').slice(0, 20))}
                       />
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <div style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}>
-                      <p style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Send via Wise / PayPal</p>
-                      <p style={{ fontSize: 13, color: '#a1a1a6' }}>
-                        Transfer <strong style={{ color: '#f5f5f7' }}>{formatPrice(grandTotal, currencyCode)}</strong> and click "I've Paid" below.
+                  /* ── PayPal + Wise for international ── */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* PayPal */}
+                    {PAYPAL_CLIENT_ID ? (
+                      <div>
+                        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 10 }}>Pay with PayPal</p>
+                        <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID, currency: currencyCode, intent: 'capture' }}>
+                          <PayPalInner
+                            total={parseFloat(grandTotal.toFixed(2))}
+                            currency={currencyCode}
+                            description={`PRIMEKEYS — ${cartItems.length} subscription${cartItems.length > 1 ? 's' : ''}`}
+                            onSuccess={async (paypalOrderId) => {
+                              // Mark all orders as PayPal-paid in Firestore
+                              await Promise.allSettled(
+                                orders.map(o => o.id
+                                  ? updateDoc(doc(db, 'orders', o.id), { paymentMethod: 'paypal', paypalOrderId, status: 'utr_submitted' })
+                                  : Promise.resolve()
+                                )
+                              )
+                              clearCart()
+                              setStep(3)
+                            }}
+                            onError={() => setError('PayPal payment failed or was cancelled. Please try again or use Wise below.')}
+                          />
+                        </PayPalScriptProvider>
+                      </div>
+                    ) : null}
+
+                    {/* Wise fallback */}
+                    <div style={{ paddingTop: PAYPAL_CLIENT_ID ? 8 : 0 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 10 }}>
+                        {PAYPAL_CLIENT_ID ? 'Or send via Wise' : 'Send via Wise / Bank Transfer'}
                       </p>
+                      <a
+                        href={WISE_LINK}
+                        target="_blank" rel="noreferrer"
+                        style={{ display: 'block', padding: '13px 20px', textAlign: 'center', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: 12, color: '#D4AF37', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+                      >
+                        Open Wise ↗
+                      </a>
                     </div>
-                    <a
-                      href={WISE_LINK}
-                      target="_blank" rel="noreferrer"
-                      style={{ display: 'block', padding: '13px 20px', textAlign: 'center', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: 12, color: '#D4AF37', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
-                    >
-                      Open Wise ↗
-                    </a>
                   </div>
                 )}
               </div>
