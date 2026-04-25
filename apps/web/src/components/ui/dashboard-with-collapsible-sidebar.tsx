@@ -7,7 +7,7 @@ import {
   ChevronsRight, TrendingUp, Activity, Package,
   Bell, Settings, Shield, ChevronDown, CalendarDays,
   ListChecks, MessageCircle, Wrench, CheckCircle2,
-  Key, Send, Clock, AlertCircle, X,
+  Key, Send, Clock, AlertCircle, X, Eye, EyeOff,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { getClients, activateOrder, getConfig, updateConfig } from '@/lib/api'
@@ -274,6 +274,7 @@ function OrdersSection() {
   const [selected, setSelected] = useState<any | null>(null)
   const [credentials, setCredentials] = useState('')
   const [adminSecret, setAdminSecret] = useState('')
+  const [showSecret, setShowSecret] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -399,10 +400,23 @@ function OrdersSection() {
                           placeholder={'Email: example@gmail.com\nPassword: pass123\nPin: 1234'} rows={4}
                           style={{ width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, color: '#f5f5f7', fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'none', boxSizing: 'border-box', marginBottom: 10 }}
                         />
-                        <input type="password" value={adminSecret} onChange={e => setAdminSecret(e.target.value)}
-                          placeholder="Admin secret key"
-                          style={{ width: '100%', height: 36, padding: '0 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#f5f5f7', fontSize: 12, outline: 'none', boxSizing: 'border-box', marginBottom: 12, fontFamily: 'inherit' }}
-                        />
+                        <div style={{ position: 'relative', marginBottom: 12 }}>
+                          <input
+                            type={showSecret ? 'text' : 'password'}
+                            value={adminSecret}
+                            onChange={e => setAdminSecret(e.target.value)}
+                            placeholder="Admin secret key"
+                            style={{ width: '100%', height: 36, padding: '0 36px 0 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#f5f5f7', fontSize: 12, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSecret(s => !s)}
+                            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: 0, display: 'flex', alignItems: 'center' }}
+                            title={showSecret ? 'Hide secret' : 'Show secret'}
+                          >
+                            {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                           <button onClick={handleActivate} disabled={activating}
                             style={{ flex: 1, height: 38, background: activating ? 'rgba(212,175,55,0.3)' : 'linear-gradient(135deg,#D4AF37,#C49A20)', color: '#000', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: activating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
