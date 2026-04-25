@@ -102,13 +102,13 @@ export default function StorePage() {
 
           <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             style={{ fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: 28 }}>
-            <span style={{ color: '#f5f5f7', display: 'block' }}>Buy Cheap Subscriptions.</span>
-            <span className="pk-shimmer-text">Every platform. 80% off.</span>
+            <span style={{ color: '#f5f5f7', display: 'block' }}>Every subscription.</span>
+            <span className="pk-shimmer-text">Fraction of the price.</span>
           </motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
             className="speakable"
-            style={{ fontSize: 18, color: '#6e6e73', maxWidth: 500, margin: '0 auto', lineHeight: 1.65 }}>
-            PRIMEKEYS offers Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows license keys, and VPN subscriptions at up to 80% off. All accounts are official and delivered to your WhatsApp in under 5 minutes, worldwide.
+            style={{ fontSize: 17, color: '#6e6e73', maxWidth: 460, margin: '0 auto', lineHeight: 1.7 }}>
+            Official accounts. Up to 80% off retail. Delivered to your WhatsApp in under 5 minutes.
           </motion.p>
         </div>
       </div>

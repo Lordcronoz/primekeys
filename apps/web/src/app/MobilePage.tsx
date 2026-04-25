@@ -94,12 +94,14 @@ export default function MobilePage({ featured }: { featured: any[] }) {
           </div>
 
           <h1 style={{ fontSize: '42px', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 24 }}>
-            <span style={{ color: '#f5f5f7', display: 'block' }}>Cheap Premium Subscriptions.</span>
-            <span className="pk-shimmer-text">Up to 80% Off.</span>
+            <span style={{ color: '#f5f5f7', display: 'block' }}>Premium Subscriptions.</span>
+            <span className="pk-shimmer-text">Fraction of the price.</span>
           </h1>
 
-          <p className="speakable" style={{ fontSize: 16, color: '#7a7a80', lineHeight: 1.6, marginBottom: 32 }}>
-            PRIMEKEYS sells Netflix, Spotify, ChatGPT Plus, Microsoft 365, Windows keys and VPN subscriptions at up to <span style={{ color: '#f5f5f7', fontWeight: 600 }}>80% off</span>. Delivered to your WhatsApp in <span style={{ color: '#f5f5f7', fontWeight: 600 }}>under 5 minutes</span>, worldwide.
+          <p className="speakable" style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.7, marginBottom: 32 }}>
+            Netflix, Spotify, ChatGPT Plus, Microsoft 365 &amp; more —
+            official accounts at up to <span style={{ color: '#a8a8b0', fontWeight: 500 }}>80% off retail</span>.
+            Delivered to your WhatsApp in <span style={{ color: '#a8a8b0', fontWeight: 500 }}>under 5 minutes</span>.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
