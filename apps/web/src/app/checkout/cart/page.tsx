@@ -7,7 +7,7 @@ import { useCurrency } from '@/context/CurrencyContext'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useCatalogue, type CatalogueProduct } from '@/hooks/useCatalogue'
-import { createOrder } from '@/lib/api'
+import { createOrderClient, notifyOrderAsync } from '@/lib/orderClient'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, User, CreditCard } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -136,17 +136,21 @@ function CartCheckoutContent() {
       for (const item of cartItems) {
         const total   = itemTotal(item.product.effectiveINR, item.product.customPrices, item.months, currencyCode)
         const rounded = roundPrice(total, currencyCode)
+        const payload = {
+          name:     formData.name.trim(),
+          email:    formData.email.trim(),
+          phone:    formData.phone.trim(),
+          product:  item.product.id,
+          duration: item.months,
+          total:    rounded,
+          currency: currencyCode,
+        }
         try {
-          const resp = await createOrder({
-            name:     formData.name.trim(),
-            email:    formData.email.trim(),
-            phone:    formData.phone.trim(),
-            product:  item.product.id,
-            duration: item.months,
-            total:    rounded,
-            currency: currencyCode,
-          })
-          placed.push({ id: resp.orderId || '', product: item.product.name })
+          // Write directly to Firestore via client SDK (no Admin SDK needed)
+          const orderId = await createOrderClient(payload)
+          placed.push({ id: orderId, product: item.product.name })
+          // Fire-and-forget emails
+          notifyOrderAsync(orderId, payload)
         } catch (itemErr: any) {
           console.error('Item order failed:', item.product.id, itemErr)
           failed.push(item.product.name)
@@ -159,14 +163,12 @@ function CartCheckoutContent() {
         }
         setStep(2)
       } else {
-        // All orders failed — show error + WhatsApp fallback
-        const lastErr = 'Order processing failed. Please use WhatsApp below to complete your purchase.'
-        setError(lastErr)
+        setError('Could not save your order. Please try again or contact us.')
         setFailedItems(cartItems.map(i => i.product.name))
       }
     } catch (err: any) {
       console.error(err)
-      setError(err.message || 'Something went wrong. Please try again or contact us.')
+      setError(err.message || 'Something went wrong. Please try again.')
       setFailedItems(cartItems.map(i => i.product.name))
     } finally {
       setLoading(false)

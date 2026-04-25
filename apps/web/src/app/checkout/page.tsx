@@ -6,7 +6,8 @@ import { PRODUCTS, calcPrice, formatPrice, UPI_ID, WISE_LINK } from '@primekeys/
 import { useCurrency } from '@/context/CurrencyContext'
 import { useAuth } from '@/context/AuthContext'
 import { useCatalogue } from '@/hooks/useCatalogue'
-import { createOrder, verifyUPI } from '@/lib/api'
+import { createOrderClient, notifyOrderAsync } from '@/lib/orderClient'
+import { verifyUPI } from '@/lib/api'
 import Link from 'next/link'
 
 async function validatePromo(code: string) {
@@ -123,13 +124,19 @@ function CheckoutContent() {
   const handleSubmitDetails = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('')
     try {
-      const finalTotal = promoValid ? Math.round(pricing.total * (1 - promoDiscount / 100)) : pricing.total
-      const resp = await createOrder({
+      const finalTotal = promoValid
+        ? parseFloat((pricing.total * (1 - promoDiscount / 100)).toFixed(2))
+        : pricing.total
+      const payload = {
         name: formData.name, email: formData.email, phone: formData.phone,
         product: product.id, duration: months, total: finalTotal, currency: currencyCode,
         referralCode: promoValid ? promo : '',
-      })
-      setOrder({ id: resp.orderId, email: formData.email }); setStep(2)
+      }
+      // Write directly to Firestore via client SDK (no Admin SDK needed)
+      const orderId = await createOrderClient(payload)
+      notifyOrderAsync(orderId, payload)
+      setOrder({ id: orderId, email: formData.email })
+      setStep(2)
     } catch (err: any) { setError(err.message || 'Something went wrong.') }
     finally { setLoading(false) }
   }
