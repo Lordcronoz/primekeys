@@ -31,7 +31,7 @@ export default function RefundPolicy() {
           </Section>
 
           <Section title="How to Request a Refund">
-            To request a refund, contact us on WhatsApp at +91 8111956481 with your order ID and a brief description of the issue. We aim to respond to all refund requests within 2 hours during business hours (10am–10pm IST). Approved refunds are processed within 3–5 business days back to your original payment method.
+            To request a refund, contact us on WhatsApp at <a href="tel:+918111956481" style={{ color: '#D4AF37' }}>+91 81119 56481</a> with your order ID and a brief description of the issue. We aim to respond to all refund requests within 2 hours during business hours (10 AM–10 PM IST). Approved refunds are processed within 3–5 business days back to your original payment method.
           </Section>
 
           <Section title="Replacement First Policy">
@@ -39,7 +39,7 @@ export default function RefundPolicy() {
           </Section>
 
           <Section title="Contact Us">
-            If you have any questions about our refund policy or want to initiate a refund request, reach us on WhatsApp at +91 8111956481 or email us at admin@primekeys.app. We are available 7 days a week from 10am to 10pm IST.
+            If you have any questions about our refund policy or want to initiate a refund request, reach us on WhatsApp at <a href="tel:+918111956481" style={{ color: '#D4AF37' }}>+91 81119 56481</a> or email us at <a href="mailto:admin@primekeys.app" style={{ color: '#D4AF37' }}>admin@primekeys.app</a>. We are available 7 days a week from 10 AM to 10 PM IST.
           </Section>
 
         </div>

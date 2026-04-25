@@ -31,7 +31,7 @@ export default function ShippingPolicy() {
           </Section>
 
           <Section title="Failed Delivery">
-            If you have not received your credentials within the stated timeframe, please contact us immediately on WhatsApp at +91 8111956481. Do not share your WhatsApp number publicly or with unknown parties, as this may compromise delivery security.
+            If you have not received your credentials within the stated timeframe, please contact us immediately on WhatsApp at <a href="tel:+918111956481" style={{ color: '#D4AF37' }}>+91 81119 56481</a>. Do not share your WhatsApp number publicly or with unknown parties, as this may compromise delivery security.
           </Section>
 
           <Section title="International Orders">
