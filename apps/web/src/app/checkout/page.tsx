@@ -20,6 +20,7 @@ async function validatePromo(code: string) {
 import { CreditCard, MapPin, Tag, User, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import ProgressIndicator from '@/components/ui/progress-indicator'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 
 // ─── Shared card shell ─────────────────────────────────────────────────────────
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -205,10 +206,10 @@ function CheckoutContent() {
                     onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
                     required
                   />
-                  <Input
-                    placeholder="WhatsApp number"
+                  <PhoneInput
                     value={formData.phone}
-                    onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                    onChange={phone => setFormData(p => ({ ...p, phone }))}
+                    placeholder="WhatsApp number"
                     required
                   />
                   <Input

@@ -11,6 +11,7 @@ import { createOrder } from '@/lib/api'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, User, CreditCard } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/PhoneInput'
 
 // ── helpers ────────────────────────────────────────────────
 function roundPrice(n: number, currency: string) {
@@ -248,10 +249,10 @@ function CartCheckoutContent() {
                       onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
                       required
                     />
-                    <Input
-                      placeholder="WhatsApp number (e.g. +91 98765 43210)"
+                    <PhoneInput
                       value={formData.phone}
-                      onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                      onChange={phone => setFormData(p => ({ ...p, phone }))}
+                      placeholder="WhatsApp number"
                       required
                     />
                     <Input
