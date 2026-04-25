@@ -297,7 +297,7 @@ export function CartDrawer() {
                   <div>
                     <p style={{ fontSize: 11, color: '#555', marginBottom: 2 }}>Cart Total</p>
                     <p style={{ fontSize: 22, fontWeight: 800, color: '#D4AF37', letterSpacing: '-0.03em' }}>
-                      {formatPrice(Math.round(cartTotal), currencyCode)}
+                      {formatPrice(cartTotal, currencyCode)}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
